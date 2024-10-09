@@ -31,6 +31,20 @@ def finalize_fig(fig, ax, xlabel, ylabel, title, logy=False):
     fig.tight_layout()
     fig.subplots_adjust(hspace=.15, wspace=.07)
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 def draw(run_dict, fig, ax, runID, dataColumn, binN=50, binRange=None, mask=None, color="black", label=None):
 
     map = [1,3,0,2] # map pixel 1-4 to the locations in the 2x2 grid
@@ -52,7 +66,18 @@ def draw(run_dict, fig, ax, runID, dataColumn, binN=50, binRange=None, mask=None
     #     fig.text(0.96,0.96,r"Sample ?, Fe55, krum_bias_trim=$\bf{"+ikrum_name+r"}$"+", i_krum=~2nA via Carboard,\nv_dummypix=350 mV, v_krumref=400 mV, AMPLITUDE CORRECTED FOR BALLISTIC DEFICIT", ha="right", zorder=100, size="small")
     # else:
     #     fig.text(0.96,0.96,r"Sample ?, Fe55, krum_bias_trim=$\bf{"+ikrum_name+r"}$"+", i_krum=~2nA via Carboard,\nv_dummypix=350 mV, v_krumref=400 mV", ha="right", zorder=100, size="small")
-    
+
+
+
+
+
+
+
+
+
+
+# drawing multiple histograms on the same plot
+
 def createMask(run_dict, runID, dataColumn, limits):
     data = run_dict[runID]["data"]
     masks = []
@@ -87,11 +112,11 @@ def drawStacked(run_dict, runID, fig, ax, dataColumn, binN=50, binRange=None, ma
             base += hist
         ax[i].set_xlim(binRange)
         
-def drawMultiple(run_dict, fig, ax, dataColumn, binN=50, binRange=None, masks=None, colors=None, labels=None):
+def drawMultiple(run_dict, runID, fig, ax, dataColumn, binN=50, binRange=None, masks=None, colors=None, labels=None):
     
     map = [1,3,0,2] # map pixel 1-4 to the locations in the 2x2 grid
     pix_names = ["00","01","10","11"]
-    data = run_dict[184]["data"]
+    data = run_dict[runID]["data"]
     
     if not colors:
         colors = np.array([["C{:d}".format(i)] for i in range(len(masks))]).flatten()
