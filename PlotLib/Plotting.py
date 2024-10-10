@@ -62,7 +62,14 @@ def draw(single_run, fig, ax, dataColumn, binN=50, binRange=None, mask=None, col
     for i, i_pix in enumerate(map):
         if binRange==None:
             binRange = [np.min(data[:,i_pix,dataColumn]), np.max(data[:,i_pix,dataColumn])]
-        hist, bins, _ = ax[i].hist(data[:,i_pix,dataColumn][mask[:,i_pix]], bins=binN, range=binRange, histtype="step", lw=1.5, zorder=100, color=color, label=label+" (N={:.1f}k)".format(np.sum(mask[:,i_pix]/1000)))
+    
+        Entries = np.sum(0.001*
+            np.logical_and(
+                mask[:,i_pix],
+                np.logical_and(
+                    data[:,i_pix,dataColumn]>binRange[0],
+                    data[:,i_pix,dataColumn]<binRange[1]))) # in k
+        hist, bins, _ = ax[i].hist(data[:,i_pix,dataColumn][mask[:,i_pix]], bins=binN, range=binRange, histtype="step", lw=1.5, zorder=100, color=color, label=label+" (N={:.1f}k)".format(Entries))
         ax[i].stairs(hist, bins, zorder=50, fill=True, alpha=0.3, color=color, lw=0)
         ax[i].grid()
         ax[i].set_xlim(binRange)
