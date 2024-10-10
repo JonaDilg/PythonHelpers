@@ -9,7 +9,7 @@ def create_fig(figsize=(8,6)):
         ax[i].tick_params("both", direction="in", top=True, right=True)
     return fig, ax
 
-def finalize_fig(fig, ax, xlabel, ylabel, title, logy=False):
+def finalize_fig(single_run, fig, ax, xlabel, ylabel, title, logy=False):
     map = [1,3,0,2] # map pixel 1-4 to the locations in the 2x2 grid
     pix_names = ["00","01","10","11"]
 
@@ -28,8 +28,21 @@ def finalize_fig(fig, ax, xlabel, ylabel, title, logy=False):
         fig.suptitle("DESYER1 - "+title, ha="left", x=0, fontweight="bold")
     else:
         fig.suptitle("DESYER1 - "+xlabel, ha="left", x=0, fontweight="bold")
+        
+    draw_parameter_string_(single_run, fig)
+        
     fig.tight_layout()
     fig.subplots_adjust(hspace=.15, wspace=.07)
+    return
+    
+def get_parameter_string_(single_run):
+    txt = "Sample {:}".format(single_run["sample"]) +" | {:}".format(single_run["data_type"]) +", {:}".format(single_run["setting"])
+    txt += "\nkrum_bias_trim=" + str(single_run["krum_bias_trim"]) + "nA; i_krum=" + str(single_run["i_krum"]) + "; bias=" + str(single_run["bias_v"]) + "V"
+    return txt  
+    
+def draw_parameter_string_(single_run, fig):
+    txt = get_parameter_string_(single_run)
+    fig.text(0.96, 0.96, txt, ha='right', fontsize=8)
     
     
     
@@ -37,19 +50,11 @@ def finalize_fig(fig, ax, xlabel, ylabel, title, logy=False):
     
     
     
+def draw(single_run, fig, ax, dataColumn, binN=50, binRange=None, mask=None, color="black", label=None):
     
-    
-    
-    
-    
-    
-    
-    
-def draw(run_dict, fig, ax, runID, dataColumn, binN=50, binRange=None, mask=None, color="black", label=None):
-
     map = [1,3,0,2] # map pixel 1-4 to the locations in the 2x2 grid
     pix_names = ["00","01","10","11"]
-    data = run_dict[runID]["data"]
+    data = single_run["data"]
     
     if mask is None:
         mask = np.ones(data[:,:,dataColumn].shape, dtype=bool)
@@ -62,10 +67,7 @@ def draw(run_dict, fig, ax, runID, dataColumn, binN=50, binRange=None, mask=None
         ax[i].grid()
         ax[i].set_xlim(binRange)
         
-    # if corrected:
-    #     fig.text(0.96,0.96,r"Sample ?, Fe55, krum_bias_trim=$\bf{"+ikrum_name+r"}$"+", i_krum=~2nA via Carboard,\nv_dummypix=350 mV, v_krumref=400 mV, AMPLITUDE CORRECTED FOR BALLISTIC DEFICIT", ha="right", zorder=100, size="small")
-    # else:
-    #     fig.text(0.96,0.96,r"Sample ?, Fe55, krum_bias_trim=$\bf{"+ikrum_name+r"}$"+", i_krum=~2nA via Carboard,\nv_dummypix=350 mV, v_krumref=400 mV", ha="right", zorder=100, size="small")
+
 
 
 
@@ -78,18 +80,18 @@ def draw(run_dict, fig, ax, runID, dataColumn, binN=50, binRange=None, mask=None
 
 # drawing multiple histograms on the same plot
 
-def createMask(run_dict, runID, dataColumn, limits):
-    data = run_dict[runID]["data"]
+def createMask(single_run, dataColumn, limits):
+    data = single_run["data"]
     masks = []
     for i in range(len(limits)-1):
         masks.append(np.logical_and(data[:,:,dataColumn]>limits[i], data[:,:,dataColumn]<limits[i+1]))
     return masks
 
-def drawStacked(run_dict, runID, fig, ax, dataColumn, binN=50, binRange=None, masks=None, colors=None, labels=None):
+def drawStacked(single_run, fig, ax, dataColumn, binN=50, binRange=None, masks=None, colors=None, labels=None):
     
     map = [1,3,0,2] # map pixel 1-4 to the locations in the 2x2 grid
     pix_names = ["00","01","10","11"]
-    data = run_dict[runID]["data"]
+    data = single_run["data"]
     
     if not colors:
         colors = np.array([["C{:d}".format(i)] for i in range(len(masks))]).flatten()
@@ -112,11 +114,11 @@ def drawStacked(run_dict, runID, fig, ax, dataColumn, binN=50, binRange=None, ma
             base += hist
         ax[i].set_xlim(binRange)
         
-def drawMultiple(run_dict, runID, fig, ax, dataColumn, binN=50, binRange=None, masks=None, colors=None, labels=None):
+def drawMultiple(single_run, fig, ax, dataColumn, binN=50, binRange=None, masks=None, colors=None, labels=None):
     
     map = [1,3,0,2] # map pixel 1-4 to the locations in the 2x2 grid
     pix_names = ["00","01","10","11"]
-    data = run_dict[runID]["data"]
+    data = single_run["data"]
     
     if not colors:
         colors = np.array([["C{:d}".format(i)] for i in range(len(masks))]).flatten()
