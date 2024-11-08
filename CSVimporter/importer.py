@@ -14,7 +14,7 @@ def load_run(runID, MaxEvts=None):
 
 # usage: load_data(run_dict, runID, n=None)
 # adds data to run_dict[runID]["data"]
-def load_data(run_dict, n=None):
+def load_data(run_dict, n=4*2E6):
     dataRaw = np.genfromtxt(run_dict["filepath"], delimiter=',', skip_header=1, max_rows=n)
 
     # remove non-complete events from the back
@@ -38,3 +38,9 @@ def load_data(run_dict, n=None):
         run_dict["data"][:,i,:] = dataRaw[i::4]
         
     print("[run importer] Loaded run", run_dict["runID"], "with", nEvents, "events and", nEntries, "entries per event per pixel.")
+    
+def dict_to_arr(data, runIDs, key):
+    a = data[runIDs[0]][key]
+    for i in range(1,len(runIDs)):
+        a = np.append(a, data[runIDs[i]][key])
+    return a
