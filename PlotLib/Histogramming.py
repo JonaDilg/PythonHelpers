@@ -1,5 +1,23 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import colormaps
+
+# entries can be either 
+# - (a) a number -> generates n evenly spaced colors from the colormap
+# - (b) an array -> maps the values in n to the colormap
+def get_color_range(entries, invert=False, mapName="plasma", maxLightness=0.85):
+    cmap = colormaps[mapName]
+    if type(entries) == int or type(entries) == float:
+        entries = np.linspace(0,maxLightness,entries)
+        # linspace starts at 0, ends at maxLightness - nice.
+    elif type(entries) == np.ndarray or type(entries) == list:
+        entries = entries / np.max(entries) * maxLightness
+    else:
+        raise TypeError("n must be a number or a list/np.ndarray")
+    colors  = cmap(entries)
+    if invert:
+        colors = colors[::-1]
+    return colors
 
 def create_fig(cols=2, rows=2, figsize=(8,6)):
     fig, ax = plt.subplots(rows, cols, sharex=True, sharey=True, figsize=figsize)
@@ -56,11 +74,17 @@ def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measur
     fig.tight_layout()
     if type(ax) is np.ndarray:
         if len(ax)==8:
-            fig.subplots_adjust(hspace=.25, wspace=.09)
+            fig.subplots_adjust(hspace=.15, wspace=.09, top=0.935)
         else:
             fig.subplots_adjust(hspace=.15, wspace=.09)
     return
-    
+
+def get_hist(run, dataString, binN=50, binRange=None, mask=None):
+    dataColumn = run[runID]["M"][dataString]
+    if mask is not None:
+        hist, bins = np.histogram(run[dataString][mask], bins=binN, range=binRange)
+    hist, bins = np.histogram(run[dataString], bins=binN, range=binRange)
+    return hist, binss
 
 def finalize_pixelwise(single_run, fig, ax, xlabel, ylabel, title, measurement="TB", logy=False):
     if len(ax) != 4:
@@ -72,17 +96,6 @@ def finalize_pixelwise(single_run, fig, ax, xlabel, ylabel, title, measurement="
     subtitles = ["pix "+pix_names[map[i]] for i in range(4)]
     finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles, measurement, logy)
 
-    
-# def get_parameter_string_TB_(single_run):
-#     txt = "Sample {:}".format(single_run["sample"]) +" | {:}".format(single_run["data_type"]) +", {:}".format(single_run["setting"])
-#     txt += "\nkrum_bias_trim=" + str(single_run["krum_bias_trim"]) + "nA; i_krum=" + str(single_run["i_krum"]) + "; bias=" + str(single_run["bias_v"]) + "V"
-#     return txt  
-
-# def get_parameter_string_Fe55_(single_run):
-#     txt = "Sample {:}".format(single_run["sample"]) +" | {:}".format(single_run["data_type"])
-#     txt += "\nkrum_bias_trim=" + str(single_run["krum_bias_trim"]) + "nA; i_krum=" + str(single_run["i_krum"]) + "; bias=" + str(single_run["bias_v"]) + "V"
-#     return txt  
-    
 def get_parameter_string_(single_run, showDict={}):
     showDict = {"sample":True, "data_type":False, "krum_bias_trim":True, "i_krum":True, "bias":True} | showDict
     txt = ""
@@ -119,7 +132,6 @@ def draw_parameter_string_(single_run, fig, showDict={}):
 def draw(ax, hist, bins, color="black", label=None, fill_alpha=0.2):
     ax.stairs(hist, bins, fill=False, alpha=1, color=color, lw=1.5, label=label)
     ax.stairs(hist, bins, fill=True, alpha=fill_alpha, color=color, lw=0)
-    
 def draw_pixelwise(single_run, ax, dataColumn, binN=50, binRange=None, mask=None, color="black", label=None):
     
     map = [1,3,0,2] # map pixel 1-4 to the locations in the 2x2 grid
@@ -143,18 +155,6 @@ def draw_pixelwise(single_run, ax, dataColumn, binN=50, binRange=None, mask=None
         ax[i].stairs(hist, bins, zorder=50, fill=True, alpha=0.3, color=color, lw=0)
         ax[i].grid()
         ax[i].set_xlim(binRange)
-        
-        
-
-
-
-
-
-
-
-
-
-
 
 # drawing multiple histograms on the same plot
 

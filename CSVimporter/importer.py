@@ -3,19 +3,34 @@ from numpy import array as arr
 
 from CSVimporter.runSettings import load_settings
 
-# usage: data[runID] = load_run(runID)
+# usage: 
+# runs = {runID:{}}
+# runs[runID] = load_run(runID)
 def load_run(runID, MaxEvts=None):
     
-    run_dict = load_settings(runID)
+    run = load_settings(runID)
     
-    load_data(run_dict, MaxEvts)
+    load_data(run, run["filepath"], MaxEvts)
     
-    return run_dict
+    return run
 
-# usage: load_data(run_dict, runID, n=None)
+
+# usage:
+# runs = load_scan(runID, "thr", [30,60,90], n=None)
+# filename must be scans/<runID>_<name><entry>.csv
+def load_scan(runID, name, entries, n=None):
+    runs = {}
+    for i in range(len(entries)):
+        # print(f"Loading run {runID} with {n} events for {name} = {entries[i]}")
+        runs[entries[i]] = load_settings(runID)
+        filepath = "/home/jona/DESY/analysis_TB/output/csv/scans/184_"+name+str(entries[i])+".csv"
+        load_data(runs[entries[i]], filepath, n)
+    return runs
+
+# usage: load_data(run, runID, n=None)
 # adds data to run_dict[runID]["data"]
-def load_data(run_dict, n=4*2E6):
-    dataRaw = np.genfromtxt(run_dict["filepath"], delimiter=',', skip_header=1, max_rows=n)
+def load_data(run, filepath,  n=4*2E6):
+    dataRaw = np.genfromtxt(filepath, delimiter=',', skip_header=1, max_rows=n)
 
     # remove non-complete events from the back
     counter = 0
@@ -33,11 +48,11 @@ def load_data(run_dict, n=4*2E6):
 
     # reshape data to [nEvents, 4, nEntries]
     # (ie. [event, pixel, entry])
-    run_dict["data"] = np.zeros([nEvents,4,nEntries])
+    run["data"] = np.zeros([nEvents,4,nEntries])
     for i in range(4):
-        run_dict["data"][:,i,:] = dataRaw[i::4]
+        run["data"][:,i,:] = dataRaw[i::4]
         
-    print("[run importer] Loaded run", run_dict["runID"], "with", nEvents, "events and", nEntries, "entries per event per pixel.")
+    print("[run importer] Loaded run", run["runID"], "with", nEvents, "events and", nEntries, "entries per event per pixel.")
     
 def dict_to_arr(data, runIDs, key):
     a = data[runIDs[0]][key]
