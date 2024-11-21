@@ -19,8 +19,8 @@ def get_color_range(entries, invert=False, mapName="plasma", maxLightness=0.85):
         colors = colors[::-1]
     return colors
 
-def create_fig(cols=2, rows=2, figsize=(8,6)):
-    fig, ax = plt.subplots(rows, cols, sharex=True, sharey=True, figsize=figsize)
+def create_fig(cols=2, rows=2, figsize=(8,6), sharex=True, sharey=True, width_ratios=None, height_ratios=None):
+    fig, ax = plt.subplots(rows, cols, sharex=sharex, sharey=sharey, figsize=figsize, width_ratios=width_ratios, height_ratios=height_ratios)
     if (rows==1) and (cols==1):
         ax.grid(True)
         ax.tick_params("both", direction="in", top=True, right=True)
@@ -33,7 +33,7 @@ def create_fig(cols=2, rows=2, figsize=(8,6)):
             ax[i].tick_params("both", direction="in", top=True, right=True)
     return fig, ax
 
-def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measurement="TB", logy=False):
+def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measurement="TB", logy=False, subplots_adjust=None):
         
     if type(ax) is np.ndarray:
         for i in range(len(ax)):
@@ -72,7 +72,11 @@ def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measur
         print("ERROR(Histogramming): measurement type \""+measurement+ "\" unknown.")
         
     fig.tight_layout()
-    if type(ax) is np.ndarray:
+    if (subplots_adjust is not None and len(subplots_adjust)==2):
+        fig.subplots_adjust(hspace=subplots_adjust[0], wspace=subplots_adjust[1], top=0.935)
+    elif (subplots_adjust is not None and len(subplots_adjust)==3):
+        fig.subplots_adjust(hspace=subplots_adjust[0], wspace=subplots_adjust[1], top=subplots_adjust[2])
+    elif (type(ax) is np.ndarray):
         if len(ax)==8:
             fig.subplots_adjust(hspace=.15, wspace=.09, top=0.935)
         else:
