@@ -33,7 +33,9 @@ def create_fig(cols=2, rows=2, figsize=(8,6), sharex=True, sharey=True, width_ra
             ax[i].tick_params("both", direction="in", top=True, right=True)
     return fig, ax
 
-def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measurement="TB", logy=False, subplots_adjust=None):
+def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measurement="TB", logy=False, subplots_adjust=None, legend_loc="best", param_narrow=False, param_fontsize=8):
+        
+    
         
     if type(ax) is np.ndarray:
         for i in range(len(ax)):
@@ -41,7 +43,7 @@ def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measur
             if (subtitles != ["0"]) and (len(subtitles) == len(ax)) :
                 ax[i].set_title(subtitles[i], {'size': 9})
             if len(ax[i].get_legend_handles_labels()[0]) > 0:
-                ax[i].legend(prop={'size': 8})
+                ax[i].legend(prop={'size': 8}, loc=legend_loc)
             if logy:
                 ax[i].set_yscale("log")
         
@@ -50,24 +52,35 @@ def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measur
             ax[i].set_xlabel(xlabel, loc='right')
         for i in range(0,len(ax),2):
             ax[i].set_ylabel(ylabel, loc='top')
+        
+        # suptitle_x0 = ax[0].get_position().x0
+        # suptitle_x1 = np.array([ax[i].get_position().x1 for i in range(0,len(ax),2)]).max()
     else:
         ax.grid(zorder = 0)
         if len(ax.get_legend_handles_labels()[0]) > 0:
-            ax.legend(prop={'size': 8})
+            ax.legend(prop={'size': 8}, loc=legend_loc)
         if logy:
             ax.set_yscale("log")
         ax.set_xlabel(xlabel, loc='right')
         ax.set_ylabel(ylabel, loc='top')
+
+        # suptitle_x0 = ax.get_position().x0
+        # suptitle_x1 = ax.get_position().x1
+        
+    axs = fig.get_axes()   
+    # suptitle_x0 = np.array([ax.get_position().x0 for ax in axs]).min()
+    suptitle_x0 = np.array([ax.get_tightbbox().transformed(fig.transFigure.inverted()).x0 for ax in axs]).min()
+    suptitle_x1 = np.array([ax.get_tightbbox().transformed(fig.transFigure.inverted()).x1 for ax in axs]).max() - 0.03
         
     if title:
-        fig.suptitle("DESYER1 - "+title, ha="left", x=0, fontweight="bold")
+        fig.suptitle("DESYER1 - "+title, ha="left", va="top", fontweight="bold", x=suptitle_x0, y=0.995)
     else:
-        fig.suptitle("DESYER1 - "+xlabel, ha="left", x=0, fontweight="bold")
+        fig.suptitle("DESYER1 - "+xlabel, ha="left", va="top", fontweight="bold", x=suptitle_x0, y=0.995)
     
     if measurement=="TB":
-        draw_parameter_string_(single_run, fig, showDict={"data_type":True})
+        draw_parameter_string_(single_run, fig, showDict={"data_type":True}, x=suptitle_x1, narrow=param_narrow, fontsize=param_fontsize)
     elif measurement=="Fe55_all":
-        draw_parameter_string_(single_run, fig, showDict={"data_type":True, "krum_bias_trim":False})
+        draw_parameter_string_(single_run, fig, showDict={"data_type":True, "krum_bias_trim":False}, x=suptitle_x1, narrow=param_narrow, fontsize=param_fontsize)
     else:
         print("ERROR(Histogramming): measurement type \""+measurement+ "\" unknown.")
         
@@ -100,7 +113,7 @@ def finalize_pixelwise(single_run, fig, ax, xlabel, ylabel, title, measurement="
     subtitles = ["pix "+pix_names[map[i]] for i in range(4)]
     finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles, measurement, logy)
 
-def get_parameter_string_(single_run, showDict={}):
+def get_parameter_string_(single_run, showDict={}, narrow=False):
     showDict = {"sample":True, "data_type":False, "krum_bias_trim":True, "i_krum":True, "bias":True} | showDict
     txt = ""
     linefilled = False
@@ -114,9 +127,14 @@ def get_parameter_string_(single_run, showDict={}):
         linefilled = True
     txt += "\n"
     linefilled = False
-    if(showDict["krum_bias_trim"]):
-        txt += "krum_bias_trim=" + str(single_run["krum_bias_trim"]) + "nA"
-        linefilled = True
+    if not narrow:
+        if(showDict["krum_bias_trim"]):
+            txt += "krum_trimming=" + str(single_run["krum_trim"]) + " DAC"
+            linefilled = True
+    else:
+        if(showDict["krum_bias_trim"]):
+            txt += "krum_trim=" + str(single_run["krum_trim"]) + " DAC\n"
+            
     if(showDict["i_krum"]):
         if linefilled:
             txt += " | "
@@ -129,9 +147,9 @@ def get_parameter_string_(single_run, showDict={}):
         linefilled = True
     return txt
     
-def draw_parameter_string_(single_run, fig, showDict={}):
-    txt = get_parameter_string_(single_run, showDict)
-    fig.text(0.96, 0.96, txt, ha='right', fontsize=8)
+def draw_parameter_string_(single_run, fig, showDict={}, x=0.95, narrow=False, fontsize=8):
+    txt = get_parameter_string_(single_run, showDict, narrow)
+    fig.text(x, 0.995, txt, ha='right', fontsize=fontsize, va="top")
         
 def draw(ax, hist, bins, color="black", label=None, fill_alpha=0.2):
     ax.stairs(hist, bins, fill=False, alpha=1, color=color, lw=1.5, label=label)
@@ -221,7 +239,7 @@ def drawMultiple(single_run, fig, ax, dataColumn, binN=50, binRange=None, masks=
             
         ax[i].set_xlim(binRange)
         
-def fit_wrapper(hist, bins, mask, fitfunc, p0, sigma=None):
+def fit_wrapper(hist, bins, mask, fitfunc, sigma=None, **kwargs):
     from scipy.optimize import curve_fit
     from scipy.stats import norm
     
@@ -239,7 +257,7 @@ def fit_wrapper(hist, bins, mask, fitfunc, p0, sigma=None):
     bins = bins[mask]
     sigma = sigma[mask]
     
-    popt, pcov = curve_fit(fitfunc, bins, hist, p0=p0, sigma=sigma)
+    popt, pcov = curve_fit(fitfunc, bins, hist, sigma=sigma, check_finite=True, absolute_sigma=True, **kwargs)
     
     perr = np.sqrt(np.diag(pcov))
     dx = fitfunc(bins, *popt) - hist
