@@ -34,16 +34,13 @@ def create_fig(cols=2, rows=2, figsize=(8,6), sharex=True, sharey=True, width_ra
     return fig, ax
 
 def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measurement="TB", logy=False, subplots_adjust=None, legend_loc="best", param_narrow=False, param_fontsize=8):
-        
-    
-        
     if type(ax) is np.ndarray:
         for i in range(len(ax)):
             ax[i].grid(zorder = 0)
             if (subtitles != ["0"]) and (len(subtitles) == len(ax)) :
                 ax[i].set_title(subtitles[i], {'size': 9})
             if len(ax[i].get_legend_handles_labels()[0]) > 0:
-                ax[i].legend(prop={'size': 8}, loc=legend_loc)
+                ax[i].legend(prop={'size': 8}, loc=legend_loc, frameon=False)
             if logy:
                 ax[i].set_yscale("log")
         
@@ -58,7 +55,7 @@ def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measur
     else:
         ax.grid(zorder = 0)
         if len(ax.get_legend_handles_labels()[0]) > 0:
-            ax.legend(prop={'size': 8}, loc=legend_loc)
+            ax.legend(prop={'size': 8}, loc=legend_loc, frameon=False)
         if logy:
             ax.set_yscale("log")
         ax.set_xlabel(xlabel, loc='right')
