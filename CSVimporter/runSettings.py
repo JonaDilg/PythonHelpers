@@ -36,7 +36,8 @@ settings_dict[runID]["bias_v"] = -3.6
 settings_dict[runID]["nEvts"] = 4.26E6
 settings_dict[runID]["purity"] = 0.01562
 settings_dict[runID]["runID"] = runID
-settings_dict[runID]["threshold_1%"] = arr([17.51,15.86,15.94,16.73])
+settings_dict[runID]["threshold"] = 220
+# settings_dict[runID]["threshold_1%"] = arr([17.51,15.86,15.94,16.73])
 settings_dict[runID]["M"] = M_AnalysisWF
 
 
@@ -53,11 +54,11 @@ settings_dict[runID]["i_krum"] = "2nA via Carboard"
 settings_dict[runID]["v_dummypix"] = 340
 settings_dict[runID]["bias_v"] = -3.6
 settings_dict[runID]["corrected"] = True
-settings_dict[runID]["threshold"] = 0.025
 settings_dict[runID]["nEvts"] = 6.55E6
 settings_dict[runID]["purity"] = 0.01566
 settings_dict[runID]["runID"] = runID
-settings_dict[runID]["threshold_1%"] = arr([19.177, 16.791, 18.199, 18.134])
+settings_dict[runID]["threshold"] = 220
+# settings_dict[runID]["threshold_1%"] = arr([19.177, 16.791, 18.199, 18.134])
 settings_dict[runID]["M"] = M_AnalysisWF
 
 runID = 192
@@ -73,11 +74,11 @@ settings_dict[runID]["i_krum"] = "2nA via Carboard"
 settings_dict[runID]["v_dummypix"] = 340
 settings_dict[runID]["bias_v"] = -3.6
 settings_dict[runID]["corrected"] = True
-settings_dict[runID]["threshold"] = 0.045
 settings_dict[runID]["nEvts"] = 11.73E6
 settings_dict[runID]["purity"] = 0.0010064
 settings_dict[runID]["runID"] = runID
-settings_dict[runID]["threshold_1%"] = arr([31.431,33.881, 30.963, 33.365])
+settings_dict[runID]["threshold"] = 600
+# settings_dict[runID]["threshold_1%"] = arr([31.431,33.881, 30.963, 33.365])
 settings_dict[runID]["M"] = M_AnalysisWF
 
 # Fe55 runs
