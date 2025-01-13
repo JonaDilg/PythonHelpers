@@ -19,24 +19,37 @@ def get_color_range(entries, invert=False, mapName="plasma", maxLightness=0.85):
         colors = colors[::-1]
     return colors
 
-def create_fig(cols=2, rows=2, figsize=(8,6), sharex=True, sharey=True, width_ratios=None, height_ratios=None):
+def create_fig(cols=2, rows=2, figsize=None, sharex=True, sharey=True, width_ratios=None, height_ratios=None):
+    if figsize is None:
+        if cols==1 and rows==1:
+            figsize = (5,3.8)
+        else:
+            figsize = (8,6)
     fig, ax = plt.subplots(rows, cols, sharex=sharex, sharey=sharey, figsize=figsize, width_ratios=width_ratios, height_ratios=height_ratios)
     if (rows==1) and (cols==1):
-        ax.grid(True)
         ax.tick_params("both", direction="in", top=True, right=True)
     else:
         ax = np.array(ax)
         if ax.ndim > 1:
             ax = ax.flatten()
         for i in range(len(ax)):
-            ax[i].grid(True)
             ax[i].tick_params("both", direction="in", top=True, right=True)
     return fig, ax
 
-def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measurement="TB", logy=False, subplots_adjust=None, legend_loc="best", param_narrow=False, param_fontsize=8):
+def get_hist(run, dataString, binN=50, binRange=None, mask=None):
+    dataColumn = run[runID]["M"][dataString]
+    if mask is not None:
+        hist, bins = np.histogram(run[dataString][mask], bins=binN, range=binRange)
+    hist, bins = np.histogram(run[dataString], bins=binN, range=binRange)
+    return hist, bins
+
+# --- finalize ---
+
+def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measurement="TB", logy=False, subplots_adjust=None, legend_loc="best", param_narrow=False, param_fontsize=8, grid=True, tight_layout=True, param_dynamic_placement=True):
     if type(ax) is np.ndarray:
         for i in range(len(ax)):
-            ax[i].grid(zorder = 0)
+            if grid:
+                ax[i].grid(zorder = 0)
             if (subtitles != ["0"]) and (len(subtitles) == len(ax)) :
                 ax[i].set_title(subtitles[i], {'size': 9})
             if len(ax[i].get_legend_handles_labels()[0]) > 0:
@@ -49,11 +62,9 @@ def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measur
             ax[i].set_xlabel(xlabel, loc='right')
         for i in range(0,len(ax),2):
             ax[i].set_ylabel(ylabel, loc='top')
-        
-        # suptitle_x0 = ax[0].get_position().x0
-        # suptitle_x1 = np.array([ax[i].get_position().x1 for i in range(0,len(ax),2)]).max()
     else:
-        ax.grid(zorder = 0)
+        if grid:
+            ax.grid(zorder = 0)
         if len(ax.get_legend_handles_labels()[0]) > 0:
             ax.legend(prop={'size': 8}, loc=legend_loc, frameon=False)
         if logy:
@@ -63,25 +74,21 @@ def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measur
 
         # suptitle_x0 = ax.get_position().x0
         # suptitle_x1 = ax.get_position().x1
-        
-    axs = fig.get_axes()   
-    # suptitle_x0 = np.array([ax.get_position().x0 for ax in axs]).min()
-    suptitle_x0 = np.array([ax.get_tightbbox().transformed(fig.transFigure.inverted()).x0 for ax in axs]).min()
-    suptitle_x1 = np.array([ax.get_tightbbox().transformed(fig.transFigure.inverted()).x1 for ax in axs]).max() - 0.03
-        
-    if title:
-        fig.suptitle("DESYER1 - "+title, ha="left", va="top", fontweight="bold", x=suptitle_x0, y=0.995)
-    else:
-        fig.suptitle("DESYER1 - "+xlabel, ha="left", va="top", fontweight="bold", x=suptitle_x0, y=0.995)
     
+    suptitle_y = 1.008
+    suptitle_x0 = 0.
+    draw_suptitle(single_run, fig, title, measurement, narrow=param_narrow, fontsize=param_fontsize)
+    
+    suptitle_x1 = 1.
     if measurement=="TB":
-        draw_parameter_string_(single_run, fig, showDict={"data_type":True}, x=suptitle_x1, narrow=param_narrow, fontsize=param_fontsize)
+        draw_parameter_string_(single_run, fig, showDict={"data_type":True}, x=suptitle_x1, y=suptitle_y, narrow=param_narrow, fontsize=param_fontsize)
     elif measurement=="Fe55_all":
         draw_parameter_string_(single_run, fig, showDict={"data_type":True, "krum_bias_trim":False}, x=suptitle_x1, narrow=param_narrow, fontsize=param_fontsize)
     else:
         print("ERROR(Histogramming): measurement type \""+measurement+ "\" unknown.")
         
-    fig.tight_layout()
+    if tight_layout:
+        fig.tight_layout()
     if (subplots_adjust is not None and len(subplots_adjust)==2):
         fig.subplots_adjust(hspace=subplots_adjust[0], wspace=subplots_adjust[1], top=0.935)
     elif (subplots_adjust is not None and len(subplots_adjust)==3):
@@ -92,23 +99,6 @@ def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measur
         else:
             fig.subplots_adjust(hspace=.15, wspace=.09)
     return
-
-def get_hist(run, dataString, binN=50, binRange=None, mask=None):
-    dataColumn = run[runID]["M"][dataString]
-    if mask is not None:
-        hist, bins = np.histogram(run[dataString][mask], bins=binN, range=binRange)
-    hist, bins = np.histogram(run[dataString], bins=binN, range=binRange)
-    return hist, binss
-
-def finalize_pixelwise(single_run, fig, ax, xlabel, ylabel, title, measurement="TB", logy=False):
-    if len(ax) != 4:
-        print("ERROR(Histogramming.py): supplied fig,ax does not have 4 subplots.")
-        return
-    map = [1,3,0,2] # map pixel 1-4 to the locations in the 2x2 grid
-    pix_names = ["00","01","10","11"]
-
-    subtitles = ["pix "+pix_names[map[i]] for i in range(4)]
-    finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles, measurement, logy)
 
 def get_parameter_string_(single_run, showDict={}, narrow=False):
     showDict = {"sample":True, "data_type":False, "krum_bias_trim":True, "i_krum":True, "bias":True} | showDict
@@ -144,13 +134,34 @@ def get_parameter_string_(single_run, showDict={}, narrow=False):
         linefilled = True
     return txt
     
-def draw_parameter_string_(single_run, fig, showDict={}, x=0.95, narrow=False, fontsize=8):
+def draw_parameter_string_(single_run, fig, showDict={}, x=0.95, y=1.008, narrow=False, fontsize=8):
     txt = get_parameter_string_(single_run, showDict, narrow)
-    fig.text(x, 0.995, txt, ha='right', fontsize=fontsize, va="top")
-        
+    fig.text(x, y, txt, ha='right', fontsize=fontsize, va="bottom")
+
+def draw_suptitle(single_run, fig, title, measurement="TB", narrow=False, fontsize=12, x=0., y=1.0088, xlabel=None):
+    if title:
+        # fig.suptitle("DESYER1 - "+title, ha="left", va="top", fontweight="bold", x=suptitle_x0, y=0.995)
+        fig.text(x, y, "DESYER1 – "+title, ha='left', fontdict={"size":"large", "weight":"bold"}, va="bottom")
+    # else:
+        # fig.suptitle("DESYER1 - "+xlabel, ha="left", va="top", fontweight="bold", x=x, y=y)
+    
+
+def finalize_pixelwise(single_run, fig, ax, xlabel, ylabel, title, measurement="TB", logy=False):
+    if len(ax) != 4:
+        print("ERROR(Histogramming.py): supplied fig,ax does not have 4 subplots.")
+        return
+    map = [1,3,0,2] # map pixel 1-4 to the locations in the 2x2 grid
+    pix_names = ["00","01","10","11"]
+
+    subtitles = ["pix "+pix_names[map[i]] for i in range(4)]
+    finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles, measurement, logy)
+    
+# --- draw histogram ---
+
 def draw(ax, hist, bins, color="black", label=None, fill_alpha=0.2):
     ax.stairs(hist, bins, fill=False, alpha=1, color=color, lw=1.5, label=label)
     ax.stairs(hist, bins, fill=True, alpha=fill_alpha, color=color, lw=0)
+
 def draw_pixelwise(single_run, ax, dataColumn, binN=50, binRange=None, mask=None, color="black", label=None):
     
     map = [1,3,0,2] # map pixel 1-4 to the locations in the 2x2 grid
@@ -174,8 +185,8 @@ def draw_pixelwise(single_run, ax, dataColumn, binN=50, binRange=None, mask=None
         ax[i].stairs(hist, bins, zorder=50, fill=True, alpha=0.3, color=color, lw=0)
         ax[i].grid()
         ax[i].set_xlim(binRange)
-
-# drawing multiple histograms on the same plot
+    
+# --- drawing multiple histograms on the same plot ---
 
 def createMask(single_run, dataColumn, limits):
     data = single_run["data"]
@@ -235,6 +246,8 @@ def drawMultiple(single_run, fig, ax, dataColumn, binN=50, binRange=None, masks=
             ax[i].stairs(hist, bins, zorder=100-len(masks)+j-1, fill=True, alpha=.3, color=colors[j], lw=0)
             
         ax[i].set_xlim(binRange)
+        
+# --- fitting ---
         
 def fit_wrapper(hist, bins, mask, fitfunc, sigma=None, **kwargs):
     from scipy.optimize import curve_fit
