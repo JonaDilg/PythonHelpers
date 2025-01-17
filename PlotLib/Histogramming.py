@@ -45,7 +45,7 @@ def get_hist(run, dataString, binN=50, binRange=None, mask=None):
 
 # --- finalize ---
 
-def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measurement="TB", logy=False, subplots_adjust=None, legend_loc="best", param_narrow=False, param_fontsize=8, grid=True, tight_layout=True, param_dynamic_placement=True):
+def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measurement="TB", logy=False, subplots_adjust=None, legend_loc="best", legend_fontdict={"size":"medium"}, param_narrow=True, param_fontsize=8, grid=False, tight_layout=False, title_linebreak=True, labelpad=1., thr=None, ER1=True):
     if type(ax) is np.ndarray:
         for i in range(len(ax)):
             if grid:
@@ -53,98 +53,115 @@ def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measur
             if (subtitles != ["0"]) and (len(subtitles) == len(ax)) :
                 ax[i].set_title(subtitles[i], {'size': 9})
             if len(ax[i].get_legend_handles_labels()[0]) > 0:
-                ax[i].legend(prop={'size': 8}, loc=legend_loc, frameon=False)
+                ax[i].legend(prop=legend_fontdict, loc=legend_loc, frameon=False)
             if logy:
                 ax[i].set_yscale("log")
         
         # assumes exactly 2 columns of plots, any number of rows.
         for i in range(len(ax)-2, len(ax)):
-            ax[i].set_xlabel(xlabel, loc='right')
+            ax[i].set_xlabel(xlabel, loc='right', labelpad=labelpad)
         for i in range(0,len(ax),2):
-            ax[i].set_ylabel(ylabel, loc='top')
+            ax[i].set_ylabel(ylabel, loc='top', labelpad=labelpad)
     else:
         if grid:
             ax.grid(zorder = 0)
         if len(ax.get_legend_handles_labels()[0]) > 0:
-            ax.legend(prop={'size': 8}, loc=legend_loc, frameon=False)
+            ax.legend(prop=legend_fontdict, loc=legend_loc, frameon=False)
         if logy:
             ax.set_yscale("log")
-        ax.set_xlabel(xlabel, loc='right')
-        ax.set_ylabel(ylabel, loc='top')
+        ax.set_xlabel(xlabel, loc='right', labelpad=labelpad)
+        ax.set_ylabel(ylabel, loc='top', labelpad=labelpad)
 
         # suptitle_x0 = ax.get_position().x0
         # suptitle_x1 = ax.get_position().x1
     
-    suptitle_y = 1.008
-    suptitle_x0 = 0.
-    draw_suptitle(single_run, fig, title, measurement, narrow=param_narrow, fontsize=param_fontsize)
     
+    title_y = 1.0088
+    # -- Suptitle -- 
+    if ER1:
+        title_str = r"$\bf{DESYER1}$"
+        if title_linebreak:
+            title_str += "\n"
+        else:
+            title_str += " – "
+    else:
+        title_str = ""
+    if title:
+        title_str += title
+    else:
+        title_str += xlabel
+    fig.text(0, title_y, title, ha='left', fontdict={"size":"large"}, va="bottom")
+    
+    # -- Parameters (top right) --
     suptitle_x1 = 1.
     if measurement=="TB":
-        draw_parameter_string_(single_run, fig, showDict={"data_type":True}, x=suptitle_x1, y=suptitle_y, narrow=param_narrow, fontsize=param_fontsize)
+        draw_parameter_string_(single_run, fig, showDict={"data_type":True, "thr":thr}, x=1., y=title_y, narrow=param_narrow, fontsize=param_fontsize)
     elif measurement=="Fe55_all":
-        draw_parameter_string_(single_run, fig, showDict={"data_type":True, "krum_bias_trim":False}, x=suptitle_x1, narrow=param_narrow, fontsize=param_fontsize)
+        draw_parameter_string_(single_run, fig, showDict={"data_type":True, "krum_bias_trim":False, "thr":thr}, x=1., narrow=param_narrow, fontsize=param_fontsize)
     else:
-        print("ERROR(Histogramming): measurement type \""+measurement+ "\" unknown.")
+        raise ValueError("ERROR(Histogramming): measurement type \""+measurement+ "\" unknown.")
         
     if tight_layout:
         fig.tight_layout()
-    if (subplots_adjust is not None and len(subplots_adjust)==2):
-        fig.subplots_adjust(hspace=subplots_adjust[0], wspace=subplots_adjust[1], top=0.935)
-    elif (subplots_adjust is not None and len(subplots_adjust)==3):
-        fig.subplots_adjust(hspace=subplots_adjust[0], wspace=subplots_adjust[1], top=subplots_adjust[2])
-    elif (type(ax) is np.ndarray):
-        if len(ax)==8:
-            fig.subplots_adjust(hspace=.15, wspace=.09, top=0.935)
+    
+    fig.subplots_adjust(left=0, bottom=0, right=1, top=1)
+    if subplots_adjust is not None and type(ax) is np.ndarray:
+        if len(subplots_adjust)==2:
+            fig.subplots_adjust(hspace=subplots_adjust[0], wspace=subplots_adjust[1])
         else:
-            fig.subplots_adjust(hspace=.15, wspace=.09)
+            raise ValueError("ERROR(Histogramming): subplots_adjust must be a list of 2 elements.")
+    if type(ax) is np.ndarray:
+        fig.subplots_adjust(hspace=0.05, wspace=0.02)
     return
 
 def get_parameter_string_(single_run, showDict={}, narrow=False):
     showDict = {"sample":True, "data_type":False, "krum_bias_trim":True, "i_krum":True, "bias":True} | showDict
     txt = ""
-    linefilled = False
+    lineHasContent = False
+    # first line
     if(showDict["sample"]):
         txt += "Sample {:}".format(single_run["sample"])
-        linefilled = True
+        lineHasContent = True
     if(showDict["data_type"]):
-        if linefilled:
+        if lineHasContent:
             txt += " | "
         txt += "{:}".format(single_run["data_type"])
-        linefilled = True
+        lineHasContent = True
+    
+    # line 2
     txt += "\n"
-    linefilled = False
-    if not narrow:
-        if(showDict["krum_bias_trim"]):
-            txt += "krum_trimming=" + str(single_run["krum_trim"]) + " DAC"
-            linefilled = True
-    else:
-        if(showDict["krum_bias_trim"]):
-            txt += "krum_trim=" + str(single_run["krum_trim"]) + " DAC\n"
-            
+    lineHasContent = False
     if(showDict["i_krum"]):
-        if linefilled:
+        if lineHasContent:
             txt += " | "
         txt += "i_krum=" + str(single_run["i_krum"])
-        linefilled = True
+        lineHasContent = True
     if(showDict["bias"]):
-        if linefilled:
+        if lineHasContent:
             txt += " | "
-        txt += "bias=" + str(single_run["bias_v"]) + "V"
-        linefilled = True
+        txt += "bias=" + str(single_run["bias_v"]) + r"$\,$V"
+        lineHasContent = True
+            
+    # line 3   
+    if (showDict["krum_bias_trim"]) or (showDict["thr"] is not None):
+        txt += "\n"
+    lineHasContent = False
+    if(showDict["krum_bias_trim"]):
+        txt += "krum_trim=" + str(single_run["krum_trim"]) + r"$\,$DAC"
+        lineHasContent = True
+    if showDict["thr"] is not None:
+        if lineHasContent:
+            txt += " | "
+        txt += "thr=" + str(showDict["thr"]) + r"$\,e^-$"
+        lineHasContent = True
+            
+    
+            
     return txt
     
 def draw_parameter_string_(single_run, fig, showDict={}, x=0.95, y=1.008, narrow=False, fontsize=8):
     txt = get_parameter_string_(single_run, showDict, narrow)
-    fig.text(x, y, txt, ha='right', fontsize=fontsize, va="bottom")
-
-def draw_suptitle(single_run, fig, title, measurement="TB", narrow=False, fontsize=12, x=0., y=1.0088, xlabel=None):
-    if title:
-        # fig.suptitle("DESYER1 - "+title, ha="left", va="top", fontweight="bold", x=suptitle_x0, y=0.995)
-        fig.text(x, y, "DESYER1 – "+title, ha='left', fontdict={"size":"large", "weight":"bold"}, va="bottom")
-    # else:
-        # fig.suptitle("DESYER1 - "+xlabel, ha="left", va="top", fontweight="bold", x=x, y=y)
-    
+    fig.text(x, y, txt, ha='right', fontsize=fontsize, va="bottom")    
 
 def finalize_pixelwise(single_run, fig, ax, xlabel, ylabel, title, measurement="TB", logy=False):
     if len(ax) != 4:

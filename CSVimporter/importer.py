@@ -6,14 +6,15 @@ from CSVimporter.runSettings import load_settings
 # usage: 
 # runs = {runID:{}}
 # runs[runID] = load_run(runID)
-def load_run(runID, MaxEvts=None):
+def load_run(runID, MaxEvts=None, filepath=None):
     
     run = load_settings(runID)
+    if filepath is not None:
+        run["filepath"] = filepath
     
     load_data(run, run["filepath"], MaxEvts)
     
     return run
-
 
 # usage:
 # runs = load_scan(runID, "thr", [30,60,90], n=None)
