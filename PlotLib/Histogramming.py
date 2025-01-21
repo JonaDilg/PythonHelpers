@@ -45,6 +45,25 @@ def get_hist(run, dataString, binN=50, binRange=None, mask=None):
 
 # --- finalize ---
 
+def savefig(fig, filename, path="/home/jona/DESY/analysis_python/output/", dpi=300):
+    if not path.endswith("/"):
+        path += "/"
+    if filename.find(".pdf")>0:
+        filename.replace(".pdf", "")
+        print("WARNING(Histogramming): filename should not contain file extension. Removed .pdf")
+    if filename.find(".png")>0:
+        print("WARNING(Histogramming): filename should not contain file extension. Removed .png")
+        filename.replace(".png", "")
+    if filename.find(".jpg")>0:
+        print("WARNING(Histogramming): filename should not contain file extension. Removed .jpg")
+        filename.replace(".jpg", "")
+    if filename.find(".")>0:
+        print("WARNING(Histogramming): filename should not contain file extension (or periods). Removed everything after the period.")
+        filename = filename.split(".")[0]
+    
+    fig.savefig(path+filename+".pdf", bbox_inches='tight', pad_inches=0.)
+    fig.savefig(path+filename+".png", bbox_inches='tight', pad_inches=0., dpi=dpi)
+
 def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measurement="TB", logy=False, subplots_adjust=None, legend_loc="best", legend_fontdict={"size":"medium"}, param_narrow=True, param_fontsize=8, grid=False, tight_layout=False, title_linebreak=True, labelpad=1., thr=None, ER1=True):
     if type(ax) is np.ndarray:
         for i in range(len(ax)):
