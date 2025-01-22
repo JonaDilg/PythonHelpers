@@ -17,20 +17,25 @@ M_AnalysisWF = {"TriggerID":0, "Timestamp":1, "PixCol":2, "PixRow":3, "PixInClus
          "Baseline":6, "Amplitude":7, "NoiseRMS":8, "Risetime":9, "Falltime":10, "ToA":11, "ToT":12, "ClstSize":13, "ClstCol":14, "ClstRow":15, "ClstCharge":16, "TrkX":17, "TrkY":18, "TrkCol":19, "TrkRow":20, "TrkResX":21, "TrkResY":22}
 M_WFDigitizer = {"TriggerID":0, "PixCol":1, "PixRow":2, "BaselineEst":3, "AmplitudeEst":4, "NoiseRMS":5, "Baseline":6, "Amplitude":7, "Risetime":8, "ToA":9, "ToT":10, "chi2red":11, "Timestamp":12, "fitp_0":13, "fitp_1":14}
                  
-                 
+
+# DEFAULTS     
+campaigns = ["Fe55 Sep 24", "TB Sep 24"]
+sample = r"#10, 4$\,$um"
+i_krum = r"2$\,$nA, Carboard"
+                      
 settings_dict = {}
 
 runID = 184
 settings_dict[runID] = {}
 settings_dict[runID]["filepath"] = "/home/jona/DESY/analysis_TB/output/csv/184_analysis.csv"
 # settings_dict[184]["filepath"] = "/home/jona/DESY/analysis_TB/output/csv/scans/184_thr220.csv"
-settings_dict[runID]["data_type"] = "TB Sep 24" 
+settings_dict[runID]["data_type"] = campaigns[1]
 settings_dict[runID]["setting"] = "Setting 2"
-settings_dict[runID]["sample"] = r"#10, 4$\,$um, w/o hole"
+settings_dict[runID]["sample"] = sample
 settings_dict[runID]["title"] = "Run 184"
 settings_dict[runID]["krum_trim_nominal"] = arr([4.57,6.78,5.53,5.53])
 settings_dict[runID]["krum_trim"] = arr([2,4,4,3])
-settings_dict[runID]["i_krum"] = r"2$\,$nA via Carboard"
+settings_dict[runID]["i_krum"] = i_krum
 settings_dict[runID]["v_dummypix"] = 340
 settings_dict[runID]["bias_v"] = -3.6
 settings_dict[runID]["nEvts"] = 4.26E6
@@ -44,13 +49,13 @@ settings_dict[runID]["M"] = M_AnalysisWF
 runID = 190
 settings_dict[runID] = {}
 settings_dict[runID]["filepath"] =  "/home/jona/DESY/analysis_TB/output/csv/190_analysis.csv"
-settings_dict[runID]["data_type"] = "TB Sep 24" 
+settings_dict[runID]["data_type"] = campaigns[1]
 settings_dict[runID]["setting"] = "Setting 3"
-settings_dict[runID]["sample"] = "#10, 4um, w/o hole"
+settings_dict[runID]["sample"] = sample
 settings_dict[runID]["title"] = "Run 190"
 settings_dict[runID]["krum_trim_nominal"] = arr([2.32,3.30,3.30,3.30])
 settings_dict[runID]["krum_trim"] = arr([0,1,1,1])
-settings_dict[runID]["i_krum"] = "2nA via Carboard"
+settings_dict[runID]["i_krum"] = i_krum
 settings_dict[runID]["v_dummypix"] = 340
 settings_dict[runID]["bias_v"] = -3.6
 settings_dict[runID]["corrected"] = True
@@ -64,13 +69,13 @@ settings_dict[runID]["M"] = M_AnalysisWF
 runID = 192
 settings_dict[runID] = {}
 settings_dict[runID]["filepath"] = "/home/jona/DESY/analysis_TB/output/csv/192_analysis.csv"
-settings_dict[runID]["data_type"] = "TB Sep 24" 
+settings_dict[runID]["data_type"] = campaigns[1]
 settings_dict[runID]["setting"] = "Setting 4"
-settings_dict[runID]["sample"] = "#10, 4um, w/o hole"
+settings_dict[runID]["sample"] = sample
 settings_dict[runID]["title"] = "Run 192"
 settings_dict[runID]["krum_trim_nominal"] = arr([6.78,9.91,9.91,9.91])
 settings_dict[runID]["krum_trim"] = arr([4,7,7,7])
-settings_dict[runID]["i_krum"] = "2nA via Carboard"
+settings_dict[runID]["i_krum"] = i_krum
 settings_dict[runID]["v_dummypix"] = 340
 settings_dict[runID]["bias_v"] = -3.6
 settings_dict[runID]["corrected"] = True
@@ -85,10 +90,10 @@ settings_dict[runID]["M"] = M_AnalysisWF
 for runID in range(633,641):
     settings_dict[runID] = {}
     settings_dict[runID]["filepath"] = "/home/jona/DESY/analysis_Fe55/output/csv/"+str(runID)+".csv"
-    settings_dict[runID]["sample"] = "#10 (4um)"
-    settings_dict[runID]["data_type"] = "Fe55 Sep 24"
+    settings_dict[runID]["sample"] = sample
+    settings_dict[runID]["data_type"] = campaigns[0]
     settings_dict[runID]["title"] = "Run "+str(runID)
-    settings_dict[runID]["i_krum"] = "2nA via Carboard"
+    settings_dict[runID]["i_krum"] = i_krum
     settings_dict[runID]["v_dummypix"] = 340 # mV
     settings_dict[runID]["v_krummref"] = 400 # mV
     settings_dict[runID]["bias_v"] = -3.6

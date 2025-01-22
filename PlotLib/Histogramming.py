@@ -61,10 +61,15 @@ def savefig(fig, filename, path="/home/jona/DESY/analysis_python/output/", dpi=3
         print("WARNING(Histogramming): filename should not contain file extension (or periods). Removed everything after the period.")
         filename = filename.split(".")[0]
     
-    fig.savefig(path+filename+".pdf", bbox_inches='tight', pad_inches=0.)
-    fig.savefig(path+filename+".png", bbox_inches='tight', pad_inches=0., dpi=dpi)
+    fig.savefig(path+filename+".pdf", bbox_inches='tight', pad_inches=0.01)
+    fig.savefig(path+filename+".png", bbox_inches='tight', pad_inches=0.01, dpi=dpi)
 
-def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measurement="TB", logy=False, subplots_adjust=None, legend_loc="best", legend_fontdict={"size":"medium"}, param_narrow=True, param_fontsize=8, grid=False, tight_layout=False, title_linebreak=True, labelpad=1., thr=None, ER1=True):
+def finalize(single_run, fig, ax,
+    title, xlabel, ylabel, subtitles=["0"],
+    title_linebreak=True, ER1=True,
+    legend_loc="best", legend_fontdict={"size":"medium"},
+    param_dict={},
+    grid=False, logy=False, subplots_adjust=None, labelpad=1.):
     if type(ax) is np.ndarray:
         for i in range(len(ax)):
             if grid:
@@ -98,7 +103,7 @@ def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measur
     title_y = 1.0088
     # -- Suptitle -- 
     if ER1:
-        title_str = r"$\bf{DESYER1}$"
+        title_str = r"$\bf{DESY ER1}$"
         if title_linebreak:
             title_str += "\n"
         else:
@@ -109,19 +114,12 @@ def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measur
         title_str += title
     else:
         title_str += xlabel
-    fig.text(0, title_y, title, ha='left', fontdict={"size":"large"}, va="bottom")
+    fig.text(0, title_y, title_str, ha='left', fontdict={"size":"large"}, va="bottom")
     
     # -- Parameters (top right) --
-    suptitle_x1 = 1.
-    if measurement=="TB":
-        draw_parameter_string_(single_run, fig, showDict={"data_type":True, "thr":thr}, x=1., y=title_y, narrow=param_narrow, fontsize=param_fontsize)
-    elif measurement=="Fe55_all":
-        draw_parameter_string_(single_run, fig, showDict={"data_type":True, "krum_bias_trim":False, "thr":thr}, x=1., narrow=param_narrow, fontsize=param_fontsize)
-    else:
-        raise ValueError("ERROR(Histogramming): measurement type \""+measurement+ "\" unknown.")
-        
-    if tight_layout:
-        fig.tight_layout()
+    param_dict = {"campaign":True, "sample":False, "ER1Param":True, "recoParam":False, "fontsize":8} | param_dict
+    draw_parameter_string_(single_run, fig, showDict=param_dict, x=1, y=title_y)
+
     
     fig.subplots_adjust(left=0, bottom=0, right=1, top=1)
     if subplots_adjust is not None and type(ax) is np.ndarray:
@@ -133,54 +131,50 @@ def finalize(single_run, fig, ax, xlabel, ylabel, title, subtitles=["0"], measur
         fig.subplots_adjust(hspace=0.05, wspace=0.02)
     return
 
-def get_parameter_string_(single_run, showDict={}, narrow=False):
-    showDict = {"sample":True, "data_type":False, "krum_bias_trim":True, "i_krum":True, "bias":True} | showDict
+
+
+def draw_parameter_string_(single_run, fig, showDict, x=0.95, y=1.008):
+    
+    def add_entry_(txt, to_add, sep=" | "):
+        if not txt=="":
+            if not txt[-1]=="\n":
+                txt += sep
+        txt += to_add
+        return txt
+    
+    minEntries = ["campaign", "sample", "ER1Param", "recoParam", "fontsize"]
+    for entry in minEntries:
+        if not entry in showDict:
+            raise ValueError("ERROR(Histogramming): key \""+entry+"\" not found in showDict. Is needed to be set to True or False.")
+    
     txt = ""
-    lineHasContent = False
-    # first line
-    if(showDict["sample"]):
-        txt += "Sample {:}".format(single_run["sample"])
-        lineHasContent = True
-    if(showDict["data_type"]):
-        if lineHasContent:
-            txt += " | "
-        txt += "{:}".format(single_run["data_type"])
-        lineHasContent = True
-    
-    # line 2
-    txt += "\n"
-    lineHasContent = False
-    if(showDict["i_krum"]):
-        if lineHasContent:
-            txt += " | "
-        txt += "i_krum=" + str(single_run["i_krum"])
-        lineHasContent = True
-    if(showDict["bias"]):
-        if lineHasContent:
-            txt += " | "
-        txt += "bias=" + str(single_run["bias_v"]) + r"$\,$V"
-        lineHasContent = True
-            
-    # line 3   
-    if (showDict["krum_bias_trim"]) or (showDict["thr"] is not None):
+
+    if (showDict["campaign"]):
+        txt = add_entry_(txt, single_run["data_type"] + ", run " + str(single_run["runID"])) 
+    if (showDict["sample"]):
+        txt = add_entry_(txt, f"Sample {single_run["sample"]}")
+    if (showDict["ER1Param"]):
         txt += "\n"
-    lineHasContent = False
-    if(showDict["krum_bias_trim"]):
-        txt += "krum_trim=" + str(single_run["krum_trim"]) + r"$\,$DAC"
-        lineHasContent = True
-    if showDict["thr"] is not None:
-        if lineHasContent:
-            txt += " | "
-        txt += "thr=" + str(showDict["thr"]) + r"$\,e^-$"
-        lineHasContent = True
-            
-    
-            
-    return txt
-    
-def draw_parameter_string_(single_run, fig, showDict={}, x=0.95, y=1.008, narrow=False, fontsize=8):
-    txt = get_parameter_string_(single_run, showDict, narrow)
-    fig.text(x, y, txt, ha='right', fontsize=fontsize, va="bottom")    
+        txt = add_entry_(txt, "i_krum=" + str(single_run["i_krum"]))
+        txt = add_entry_(txt, "bias=" + str(single_run["bias_v"]) + r"$\,$V")
+        txt += "\n"
+        txt = add_entry_(txt, "krum_trim=" + str(single_run["krum_trim"]) + r"$\,$DAC")
+        if "thr" not in showDict:
+            raise ValueError("ERROR(Histogramming): key \"thr\" not found in showDict. Is needed if \"ER1Param\" is True. Set to None if not needed.")
+        if showDict["thr"] is not None:
+            txt = add_entry_(txt, "thr=" + str(showDict["thr"]) + r"$\,e^-$")
+    if showDict["recoParam"]:
+        txt += "\n"
+        minEntries = ["edgeCut", "minTrkPlanes"]
+        for entry in minEntries:
+            if not entry in showDict:
+                raise ValueError("ERROR(Histogramming): key \""+entry+"\" not found in showDict. Set to value, or None if not needed.")
+        if showDict["edgeCut"] is not None:
+            txt = add_entry_(txt, "EdgeCut=" + str(showDict["edgeCut"]))
+        if showDict["minTrkPlanes"] is not None:
+            txt = add_entry_(txt, "minTrkPlanes=" + str(showDict["minTrkPlanes"]))
+
+    fig.text(x, y, txt, ha='right', fontsize=showDict["fontsize"], va="bottom")
 
 def finalize_pixelwise(single_run, fig, ax, xlabel, ylabel, title, measurement="TB", logy=False):
     if len(ax) != 4:
