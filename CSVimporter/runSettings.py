@@ -20,7 +20,7 @@ M_WFDigitizer = {"TriggerID":0, "PixCol":1, "PixRow":2, "BaselineEst":3, "Amplit
 
 # DEFAULTS     
 campaigns = ["Fe55 Sep 24", "TB Sep 24"]
-sample = r"#10, 4$\,$um"
+sample = r"#10, 4$\,$um ngap"
 i_krum = r"2$\,$nA, Carboard"
                       
 settings_dict = {}
@@ -34,7 +34,7 @@ settings_dict[runID]["setting"] = "Setting 2"
 settings_dict[runID]["sample"] = sample
 settings_dict[runID]["title"] = "Run 184"
 settings_dict[runID]["krum_trim_nominal"] = arr([4.57,6.78,5.53,5.53])
-settings_dict[runID]["krum_trim"] = arr([2,4,4,3])
+settings_dict[runID]["krum_trim"] = arr([2,4,3,3])
 settings_dict[runID]["i_krum"] = i_krum
 settings_dict[runID]["v_dummypix"] = 340
 settings_dict[runID]["bias_v"] = -3.6
