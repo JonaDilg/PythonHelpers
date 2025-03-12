@@ -15,7 +15,10 @@ charge_calibration = {
 
 M_AnalysisWF = {"TriggerID":0, "Timestamp":1, "PixCol":2, "PixRow":3, "PixInCluster":4, "Charge":5, 
          "Baseline":6, "Amplitude":7, "NoiseRMS":8, "Risetime":9, "Falltime":10, "ToA":11, "ToT":12, "ClstSize":13, "ClstCol":14, "ClstRow":15, "ClstCharge":16, "TrkX":17, "TrkY":18, "TrkCol":19, "TrkRow":20, "TrkResX":21, "TrkResY":22}
-M_WFDigitizer = {"TriggerID":0, "PixCol":1, "PixRow":2, "BaselineEst":3, "AmplitudeEst":4, "NoiseRMS":5, "Baseline":6, "Amplitude":7, "Risetime":8, "ToA":9, "ToT":10, "chi2red":11, "Timestamp":12, "fitp_0":13, "fitp_1":14}
+M_WFDigitizer = {"TriggerID":0, "EventStartTime":1, "PixCol":2, "PixRow":3, 
+    "BaselineEst":4, "AmplitudeEst":5, "ChargeEst":6,"NoiseRMS":7,
+    "Baseline":8, "Amplitude":9, "Charge":10, "Risetime":11, "ToA":12, "ToT":13, "Timestamp":14} # new & corrected. in use from 2025-03-11
+# M_WFDigitizer = {"TriggerID":0, "PixCol":1, "PixRow":2, "BaselineEst":3, "AmplitudeEst":4, "NoiseRMS":5, "Baseline":6, "Amplitude":7, "Risetime":8, "ToA":9, "ToT":10, "chi2red":11, "Timestamp":12, "fitp_0":13, "fitp_1":14}
                  
 
 # DEFAULTS     
@@ -89,7 +92,7 @@ settings_dict[runID]["M"] = M_AnalysisWF
 # Fe55 runs
 for runID in range(633,641):
     settings_dict[runID] = {}
-    settings_dict[runID]["filepath"] = "/home/jona/DESY/analysis_Fe55/output/csv/"+str(runID)+".csv"
+    settings_dict[runID]["filepath"] = "/home/jona/DESY/analysis_Fe55/output/csv/chargeCal_"+str(runID)+".csv"
     settings_dict[runID]["sample"] = sample
     settings_dict[runID]["data_type"] = campaigns[0]
     settings_dict[runID]["title"] = "Run "+str(runID)

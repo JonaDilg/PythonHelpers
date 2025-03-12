@@ -7,6 +7,33 @@ from uncertainties import ufloat as uf
 from uncertainties.unumpy import uarray as uarr
 import ROOT
 
+def curve_fit_wrapper(hist, bins, mask, fitfunc, sigma=None, **kwargs):
+    from scipy.optimize import curve_fit
+    
+    # fit function needs to be defined as f(x, *p)
+    # p0 is the initial guess for the fit parameters
+    # mask is the mask to apply to the data
+    
+    if sigma is None:
+        sigma = np.sqrt(hist)
+    
+    mask_nonzero = hist>0
+    mask = np.logical_and(mask, mask_nonzero)
+    hist = hist[mask]
+    bins = bins[:-1]+(bins[1]-bins[0])/2
+    bins = bins[mask]
+    sigma = sigma[mask]
+    
+    popt, pcov = curve_fit(fitfunc, bins, hist, sigma=sigma, check_finite=True, absolute_sigma=True, **kwargs)
+    
+    perr = np.sqrt(np.diag(pcov))
+    dx = fitfunc(bins, *popt) - hist
+    chi2 = np.sum(dx**2 / hist)
+    
+    ndeg = len(hist) - len(popt)
+        
+    return popt, perr, chi2, ndeg
+
 def normalize(hist, bins):
     """
     Normalize a histogram to the integral of the PDF. (ie. the area under it is 1)

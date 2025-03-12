@@ -2,6 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colormaps
 
+import matplotlib as mpl
+mpl.rcParams["font.serif"] = "CMU serif"
+mpl.rcParams["mathtext.fontset"] = "custom"
+mpl.rcParams["mathtext.rm"] = "CMU serif"
+mpl.rcParams["mathtext.it"] = "CMU serif:italic"
+mpl.rcParams["mathtext.bf"] = "CMU serif:bold"
+mpl.rcParams["font.family"] = "serif"
+
 # entries can be either 
 # - (a) a number -> generates n evenly spaced colors from the colormap
 # - (b) an array -> maps the values in n to the colormap
@@ -19,7 +27,7 @@ def get_color_range(entries, invert=False, mapName="plasma", maxLightness=0.85):
         colors = colors[::-1]
     return colors
 
-def create_fig(cols=1, rows=1, figsize=None, sharex=True, sharey=True, width_ratios=None, height_ratios=None, **kwargs):
+def create_fig(cols=1, rows=1, figsize=None, sharex=True, sharey=True, flatten=True, **kwargs):
     if figsize is None:
         figsize = (5+1.5*(cols-1),3.5+1.5*(rows-1))
     fig, ax = plt.subplots(rows, cols, sharex=sharex, sharey=sharey, figsize=figsize, **kwargs)
@@ -27,10 +35,14 @@ def create_fig(cols=1, rows=1, figsize=None, sharex=True, sharey=True, width_rat
         ax.tick_params("both", direction="in", top=True, right=True)
     else:
         ax = np.array(ax)
-        if ax.ndim > 1:
+        if flatten:
             ax = ax.flatten()
-        for i in range(len(ax)):
-            ax[i].tick_params("both", direction="in", top=True, right=True)
+            for i in range(len(ax)):
+                ax[i].tick_params("both", direction="in", top=True, right=True)
+        else:
+            for i in range(rows):
+                for j in range(cols):
+                    ax[i,j].tick_params("both", direction="in", top=True, right=True)
     fig.subplots_adjust(left=0, bottom=0, right=1, top=1)
     return fig, ax
 
@@ -43,25 +55,18 @@ def get_hist(run, dataString, binN=50, binRange=None, mask=None):
 
 # --- finalize ---
 
-def finalize(single_run, fig, ax,
-    title, xlabel, ylabel, subtitles=["0"],
+def finalize_noRun(fig, ax,
+    title, xlabel, ylabel, subtitles=None,
     title_linebreak=True, ER1=True,
-    legend_loc="best", legend_fontdict={"size":"medium"},
-    param_dict={},
+    legend_loc="best", legend_fontdict={"size":"medium"}, legend_borderaxespad=None,
     grid=False, logy=False, subplots_adjust=None, labelpad=1.):
     
-    # -- Suptitle & Parameters -- 
+    # -- Suptitle --
     
     title_x0 = 0.    
     title_y0 = 1.007
-    
-    title_x1 = 0.
-    for child in fig.get_axes():
-        title_x1 = max(title_x1, child.get_position().x1)
-    title_x1 += 0.001
-    
     if ER1:
-        title_str = r"$\bf{DESY ER1}$"
+        title_str = r"$\bf{DESY\;chip\;V2}$"
         if title_linebreak:
             title_str += "\n"
         else:
@@ -72,21 +77,20 @@ def finalize(single_run, fig, ax,
         title_str += title
     else:
         title_str += xlabel
-    fig.text(title_x0, title_y0, title_str, ha='left', fontdict={"size":"large"}, va="bottom", linespacing=1.7)
+    fig.text(title_x0, title_y0, title_str, ha='left', fontdict={"size":"large"}, va="bottom", linespacing=1.3)
     
-    param_dict = {"campaign":True, "sample":False, "ER1Param":True, "recoParam":False, "fontsize":8} | param_dict
-    draw_parameter_string_(single_run, fig, showDict=param_dict, x=title_x1, y=title_y0)
-
+    
     # -- Adjustments --
     
     if type(ax) is np.ndarray:
         for i in range(len(ax)):
             if grid:
                 ax[i].grid(zorder = 0)
-            if (subtitles != ["0"]) and (len(subtitles) == len(ax)) :
-                ax[i].set_title(subtitles[i], {'size': 9})
-            if len(ax[i].get_legend_handles_labels()[0]) > 0:
-                ax[i].legend(prop=legend_fontdict, loc=legend_loc, frameon=False)
+            if (subtitles is not None) and (len(subtitles) == len(ax)) :
+                # ax[i].set_title(subtitles[i], {'size': 9})
+                ax[i].text(0.5, 0.96, subtitles[i], ha='center', va='top', transform=ax[i].transAxes, fontdict={"size":"medium"})
+            if (legend_loc is not None) and (len(ax[i].get_legend_handles_labels()[0]) > 0):
+                ax[i].legend(prop=legend_fontdict, loc=legend_loc, frameon=False, borderaxespad=legend_borderaxespad)
             if logy:
                 ax[i].set_yscale("log")
         
@@ -98,26 +102,48 @@ def finalize(single_run, fig, ax,
     else:
         if grid:
             ax.grid(zorder = 0)
-        if len(ax.get_legend_handles_labels()[0]) > 0:
-            ax.legend(prop=legend_fontdict, loc=legend_loc, frameon=False)
+        if (legend_loc is not None) and (len(ax.get_legend_handles_labels()[0]) > 0):
+            ax.legend(prop=legend_fontdict, loc=legend_loc, frameon=False, borderaxespad=legend_borderaxespad)
         if logy:
             ax.set_yscale("log")
         ax.set_xlabel(xlabel, loc='right', labelpad=labelpad)
         ax.set_ylabel(ylabel, loc='top', labelpad=labelpad)
-    
-    
-    
-    if subplots_adjust is not None and type(ax) is np.ndarray:
-        if len(subplots_adjust)==2:
-            fig.subplots_adjust(hspace=subplots_adjust[0], wspace=subplots_adjust[1])
-        else:
-            raise ValueError("ERROR(Histogramming): subplots_adjust must be a list of 2 elements.")
+        
+    if not (subplots_adjust is None):
+        if type(ax) is np.ndarray:
+            if len(subplots_adjust)==2:
+                fig.subplots_adjust(hspace=subplots_adjust[0], wspace=subplots_adjust[1])
+            else:
+                raise ValueError("ERROR(Histogramming): subplots_adjust must be a list of 2 elements.")
     if type(ax) is np.ndarray:
         fig.subplots_adjust(hspace=0.05, wspace=0.02)
-        
+
+def finalize(single_run, fig, ax,
+    title, xlabel, ylabel, subtitles=None,
+    title_linebreak=True, ER1=True,
+    legend_loc="best", legend_fontdict={"size":"medium"}, legend_borderaxespad=None,
+    param_dict={},
+    grid=False, logy=False, subplots_adjust=None, labelpad=1.):
     
-        
-    return
+    # -- Parameters -- 
+    
+    title_x1 = 0.
+    for child in fig.get_axes():
+        title_x1 = max(title_x1, child.get_position().x1)
+    title_x1 += 0.001
+    
+    title_y0 = 1.007
+    
+    param_dict = {"campaign":True, "run":True, "sample":False, "ER1Param":True, "recoParam":False, "fontsize":8} | param_dict
+    draw_parameter_string_(single_run, fig, showDict=param_dict, x=title_x1, y=title_y0)
+
+    # -- call finalize_noRun --
+    
+    finalize_noRun(fig, ax,
+    title, xlabel, ylabel, subtitles,
+    title_linebreak=title_linebreak, ER1=ER1,
+    legend_loc=legend_loc, legend_fontdict=legend_fontdict, legend_borderaxespad=legend_borderaxespad,
+    grid=grid, logy=logy, subplots_adjust=subplots_adjust, labelpad=labelpad)
 
 def pull_up_ax(fig, ax):
     left, bottom, widht, height = ax.get_position().bounds
@@ -159,7 +185,9 @@ def draw_parameter_string_(single_run, fig, showDict, x=0.95, y=1.008):
     txt = r"$\,$"
 
     if (showDict["campaign"]):
-        txt = add_entry_(txt, single_run["data_type"] + ", run " + str(single_run["runID"])) 
+        txt = add_entry_(txt, single_run["data_type"])
+    if (showDict["run"]):
+        txt = add_entry_(txt, "run " + str(single_run["runID"]))
     if (showDict["sample"]):
         txt = add_entry_(txt, f"Sample {single_run["sample"]}")
     if (showDict["ER1Param"]):
@@ -257,33 +285,3 @@ def drawMultiple(single_run, fig, ax, dataColumn, binN=50, binRange=None, masks=
             ax[i].stairs(hist, bins, zorder=100-len(masks)+j-1, fill=True, alpha=.3, color=colors[j], lw=0)
             
         ax[i].set_xlim(binRange)
-        
-# --- fitting ---
-        
-def fit_wrapper(hist, bins, mask, fitfunc, sigma=None, **kwargs):
-    from scipy.optimize import curve_fit
-    from scipy.stats import norm
-    
-    # fit function needs to be defined as f(x, *p)
-    # p0 is the initial guess for the fit parameters
-    # mask is the mask to apply to the data
-    
-    if sigma is None:
-        sigma = np.sqrt(hist)
-    
-    mask_nonzero = hist>0
-    mask = np.logical_and(mask, mask_nonzero)
-    hist = hist[mask]
-    bins = bins[:-1]+(bins[1]-bins[0])/2
-    bins = bins[mask]
-    sigma = sigma[mask]
-    
-    popt, pcov = curve_fit(fitfunc, bins, hist, sigma=sigma, check_finite=True, absolute_sigma=True, **kwargs)
-    
-    perr = np.sqrt(np.diag(pcov))
-    dx = fitfunc(bins, *popt) - hist
-    chi2 = np.sum(dx**2 / hist)
-    
-    ndeg = len(hist) - len(popt)
-        
-    return popt, perr, chi2, ndeg
