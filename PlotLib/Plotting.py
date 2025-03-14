@@ -221,8 +221,8 @@ def draw_parameter_string_(single_run, fig, showDict, x=0.95, y=1.008):
     
 # --- draw histogram ---
 
-def draw(ax, hist, bins, color="black", label=None, fill_alpha=0.2, **kwargs):
-    ax.stairs(hist, bins, fill=False, alpha=1, color=color, lw=1.5, label=label, **kwargs)
+def draw(ax, hist, bins, color="black", label=None, fill_alpha=0.2, lw=None, **kwargs):
+    ax.stairs(hist, bins, fill=False, alpha=1, color=color, lw=lw, label=label, **kwargs)
     ax.stairs(hist, bins, fill=True, alpha=fill_alpha, color=color, lw=0, **kwargs)
     
 # --- drawing multiple histograms on the same plot ---
