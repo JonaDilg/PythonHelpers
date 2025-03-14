@@ -29,7 +29,12 @@ def get_color_range(entries, invert=False, mapName="plasma", maxLightness=0.85):
 
 def create_fig(cols=1, rows=1, figsize=None, sharex=True, sharey=True, flatten=True, **kwargs):
     if figsize is None:
-        figsize = (5+1.5*(cols-1),3.5+1.5*(rows-1))
+        if cols==2 and rows==2:
+            figsize = [6,4.5]
+        elif cols==2 and rows==4:
+            figsize = [6,7.5]
+        else:
+            figsize = (5+1.5*(cols-1),3.5+1.5*(rows-1))
     fig, ax = plt.subplots(rows, cols, sharex=sharex, sharey=sharey, figsize=figsize, **kwargs)
     if (rows==1) and (cols==1):
         ax.tick_params("both", direction="in", top=True, right=True)
