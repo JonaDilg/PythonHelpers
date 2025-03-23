@@ -8,12 +8,13 @@ from CSVimporter.runSettings import load_settings
 # runs[runID] = load_run(runID)
 def load_run(runID, MaxEvts=None, filepath=None):
     
-    run = load_settings(runID)
+    run = load_settings(runID) # this is a dict
     if filepath is not None:
         run["filepath"] = filepath
     
-    load_data(run, run["filepath"], MaxEvts)
-    
+    load_data(run, run["filepath"], MaxEvts) # add events as array into run 
+    # access data via run["data"][event,pixel,entryID]
+    # entryIDs are encoded in the dict run["M"] (from csv header line)
     return run
 
 # usage:
@@ -47,13 +48,20 @@ def load_data(run, filepath,  n=4*2E6):
     nEvents = int(dataRaw[:,0].size / 4)
     nEntries = dataRaw[0].size
 
-    # reshape data to [nEvents, 4, nEntries]
-    # (ie. [event, pixel, entry])
+    # reshape data to [nEvents, 4, nEntries] (ie. [event, pixel, entry])
     run["data"] = np.zeros([nEvents,4,nEntries])
     for i in range(4):
         run["data"][:,i,:] = dataRaw[i::4]
         
+    # get the csv header (first line)
+    headerStr = np.loadtxt(filepath, delimiter=",", max_rows=1, dtype=str)
+    run["M"] = {}
+    for i in range(len(headerStr)):
+        run["M"][str(headerStr[i])] = i
+
     print("[run importer] Loaded run", run["runID"], "with", nEvents, "events and", nEntries, "entries per event per pixel.")
+    
+    # the run dict we edited here is a pointer to the one we used before, no need to return anything
     
 def dict_to_arr(data, runIDs, key):
     a = data[runIDs[0]][key]

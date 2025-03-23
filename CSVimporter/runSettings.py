@@ -87,7 +87,7 @@ settings_dict[runID]["purity"] = 0.0010064
 settings_dict[runID]["runID"] = runID
 settings_dict[runID]["threshold"] = 600
 # settings_dict[runID]["threshold_1%"] = arr([31.431,33.881, 30.963, 33.365])
-settings_dict[runID]["M"] = M_AnalysisWF
+# settings_dict[runID]["M"] = M_AnalysisWF # auto extract header from CSV now (2025-03-18)
 
 # Fe55 runs
 for runID in range(633,641):
@@ -102,7 +102,7 @@ for runID in range(633,641):
     settings_dict[runID]["bias_v"] = -3.6
     settings_dict[runID]["threshold"] = 0.015
     settings_dict[runID]["runID"] = runID
-    settings_dict[runID]["M"] = M_WFDigitizer
+    # settings_dict[runID]["M"] = M_WFDigitizer # auto extract header from CSV now (2025-03-18)
 runID = 633
 settings_dict[runID]["krum_trim_nominal"] = 5.53
 settings_dict[runID]["krum_trim"] = 3
