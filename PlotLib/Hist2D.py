@@ -116,16 +116,16 @@ class Hist_2D:
             im = ax.imshow(self.val.T, extent=[self.binsX[0]-binWidthX, self.binsX[-1]+binWidthX, self.binsY[0]-binWidthY, self.binsY[-1]+binWidthY], origin='lower', **kwargs)
             ax.plot([self.binsX[0],self.binsX[-1],self.binsX[-1],self.binsX[0],self.binsX[0]], [self.binsY[0],self.binsY[0],self.binsY[-1],self.binsY[-1],self.binsY[0]], color='black', linestyle=":")
         ax.set_aspect(aspect, adjustable="box", anchor="NW")
-        if ax_cbar is None:
-            y0 = ax.get_position().y0
-            pad = 0.01
-            width = 0.04
-            ax_cbar = ax.get_figure().add_axes([1.01, y0, width, 1-y0])   
-        cbar = plt.colorbar(im, cax=ax_cbar)
-        cbar.set_label(cbar_label, loc="top", labelpad=0.5)
-        ax_cbar.tick_params(axis="y", direction="in", )
-
         
+        if ax_cbar is not None:
+            if ax_cbar is "auto":
+                y0 = ax.get_position().y0
+                pad = 0.01
+                width = 0.04
+                ax_cbar = ax.get_figure().add_axes([1.01, y0, width, 1-y0])   
+            cbar = plt.colorbar(im, cax=ax_cbar)
+            cbar.set_label(cbar_label, loc="top", labelpad=0.5)
+            ax_cbar.tick_params(axis="y", direction="in", )
         return im, ax_cbar
 
     def printOverflow(self):
