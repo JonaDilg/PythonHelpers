@@ -192,6 +192,20 @@ class Plot_2D(Hist_2D):
         for i in range(len(xs)):
             self.data[xs[i],ys[i]] = np.append(self.data[xs[i],ys[i]], [zs[i]]) # appends each z to the list of entries in its corresponding bin
         self.analyseData()
+    
+    def fillEveryBin(self, values, overflow=True, runAnalyse=True):
+        if overflow:
+            if values.shape != self.data.shape:
+                raise ValueError("[ERROR] Plot_2D.fillEveryBin(): shape of entries ("+str(values.shape)+") array needs to have same shape as histogram ("+str(self.data.shape)+"). overflow=True")
+        else:
+            if values.shape != self.data[1:-1,1:-1].shape:
+                raise ValueError("[ERROR] Plot_2D.fillEveryBin(): shape of entries ("+str(values.shape)+") array needs to have same shape as histogram ("+str(self.data[1:-1,1:-1].shape)+"). overflow=False")
+        overflow = not overflow # invert overflow to make the loop look nicer. shift by +1 if there are no overflow bins in the new values
+        for binX in range(len(values)):
+            for binY in range(len(values[0])):
+                self.data[binX+overflow, binY+overflow] = np.append(self.data[binX, binY], [values[binX, binY]])
+        if runAnalyse:
+            self.analyseData()
         
     # use the data in each bin to fill the histogram
     def analyseData(self):
