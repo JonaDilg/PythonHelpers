@@ -29,7 +29,9 @@ def get_color_range(entries, invert=False, mapName="plasma", maxLightness=0.85):
 
 def create_fig(cols=1, rows=1, figsize=None, sharex=True, sharey=True, flatten=True, **kwargs):
     if figsize is None:
-        if cols==2 and rows==2:
+        if cols==1 and rows==1:
+            figsize = [4,3]
+        elif cols==2 and rows==2:
             figsize = [6,4.5]
         elif cols==2 and rows==4:
             figsize = [6,7.5]
@@ -68,21 +70,19 @@ def finalize_noRun(fig, ax,
     
     # -- Suptitle --
     
-    title_x0 = 0.    
-    title_y0 = 1.007
-    if ER1:
-        title_str = r"$\bf{DESY\;chip\;V2}$"
-        if title_linebreak:
-            title_str += "\n"
+    if title is not None:
+        title_x0 = 0.    
+        title_y0 = 1.007
+        if ER1:
+            title_str = r"$\bf{DESY\;chip\;V2}$"
+            if title_linebreak:
+                title_str += "\n"
+            else:
+                title_str += " – "
         else:
-            title_str += " – "
-    else:
-        title_str = ""
-    if title:
+            title_str = ""
         title_str += title
-    else:
-        title_str += xlabel
-    fig.text(title_x0, title_y0, title_str, ha='left', fontdict={"size":"large"}, va="bottom", linespacing=1.3)
+        fig.text(title_x0, title_y0, title_str, ha='left', fontdict={"size":"large"}, va="bottom", linespacing=1.3)
     
     
     # -- Adjustments --
