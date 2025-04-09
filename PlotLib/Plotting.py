@@ -30,7 +30,7 @@ def get_color_range(entries, invert=False, mapName="plasma", maxLightness=0.85):
 def create_fig(cols=1, rows=1, figsize=None, sharex=True, sharey=True, flatten=True, **kwargs):
     if figsize is None:
         if cols==1 and rows==1:
-            figsize = [4,3]
+            figsize = [3.5,2.5]
         elif cols==2 and rows==2:
             figsize = [6,4.5]
         elif cols==2 and rows==4:
