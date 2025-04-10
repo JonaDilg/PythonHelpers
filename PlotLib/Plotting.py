@@ -221,7 +221,7 @@ def draw_parameter_string_(single_run, fig, showDict, x=0.95, y=1.008):
         if showDict["minTrkPlanes"] is not None:
             txt = add_entry_(txt, "minTrkPlanes=" + str(showDict["minTrkPlanes"]))
 
-    fig.text(x, y, txt, ha='right', fontsize=showDict["fontsize"], va="bottom", linespacing=1.1)
+    fig.text(x, y, txt, ha='right', fontsize=showDict["fontsize"], va="bottom", linespacing=0.9)
 
     
 # --- draw histogram ---
