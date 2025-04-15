@@ -290,7 +290,6 @@ class Plot_2D(Hist_2D):
             # N - do not plot
             # Q - quiet mode
         fitter.fit()
-        fitter.draw(f"temp-{binXY[0]}-{binXY[1]}.pdf")
         fitter.print()
         if fitter.getStatus() == 0:
             res = uf(fitter.getMaxX(), 0.)
