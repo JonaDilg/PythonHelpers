@@ -23,7 +23,7 @@ M_WFDigitizer = {"TriggerID":0, "EventStartTime":1, "PixCol":2, "PixRow":3,
 
 # DEFAULTS     
 campaigns = ["Fe55 Sep 24", "TB Sep 24"]
-sample = r"#10, 4$\,$um ngap"
+sample = r"#10, 4$\,$μm ngap"
 i_krum = r"2$\,$nA, Carboard"
                       
 settings_dict = {}

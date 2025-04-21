@@ -7,24 +7,32 @@ from uncertainties import ufloat as uf
 from uncertainties.unumpy import uarray as uarr
 import ROOT
 
-def curve_fit_wrapper(hist, bins, mask, fitfunc, sigma=None, **kwargs):
+def curve_fit_wrapper(hist, bins, fitfunc, mask=None, sigma=None, p0=None, bounds=[-np.inf,np.inf], **kwargs):
     from scipy.optimize import curve_fit
     
     # fit function needs to be defined as f(x, *p)
     # p0 is the initial guess for the fit parameters
     # mask is the mask to apply to the data
     
+    if len(hist) != len(bins)-1:
+        raise ValueError("curve_fit_wrapper(): hist and bins must have the same length")
+    if len(hist) == 0:
+        raise ValueError("curve_fit_wrapper(): hist must not be empty")
+    
     if sigma is None:
         sigma = np.sqrt(hist)
+    if mask is None:
+        mask = np.ones(len(hist), dtype=bool)
     
     mask_nonzero = hist>0
     mask = np.logical_and(mask, mask_nonzero)
     hist = hist[mask]
-    bins = bins[:-1]+(bins[1]-bins[0])/2
+    bins = (bins[:-1]+bins[1:])/2
+    # bins = bins[:-1]+(bins[1]-bins[0])/2
     bins = bins[mask]
     sigma = sigma[mask]
     
-    popt, pcov = curve_fit(fitfunc, bins, hist, sigma=sigma, check_finite=True, absolute_sigma=True, **kwargs)
+    popt, pcov = curve_fit(fitfunc, bins, hist, sigma=sigma, p0=p0, bounds=bounds, check_finite=True, absolute_sigma=True, **kwargs)
     
     perr = np.sqrt(np.diag(pcov))
     dx = fitfunc(bins, *popt) - hist
@@ -47,17 +55,41 @@ def normalize(hist, bins):
     """
     return arr(hist) / np.sum(hist) / np.diff(bins)
 
-def truncate(hist, bins, interval=0.95):
+def truncate_array(entries, interval=0.95):
+    """
+    Truncate a a set of entries by removing the highest and lowest entries. Rounds down the number of removed entries.
+    
+    Parameters
+    - entries: list of entries
+    - interval: fraction of entries to keep (0.0 < interval < 1.0)
+    
+    Returns
+    - hist: truncated values
+    """
+    if len(entries) == 0:
+        raise ValueError("truncate_entries(): entries must not be empty")
+    
+    entries = np.sort(entries)
+    N = len(entries)
+    entries = entries[int(N*(1-interval)/2):int(N*(1+interval)/2)]
+    print("truncated. Removed " , N-len(entries) , " entries, kept " , len(entries) , " entries.")
+    return entries
+    
+    
+    
+def truncate_hist(hist, bins, interval=0.95):
     """
     Truncate a 1D histogram to a certain interval. Cuts off the tails of the histogram., does not change the bin content of bins on the edge.
     
     Parameters
     - hist: values of the histogram
     - bins: bin edges (len(bins) = len(hist)+1)
+    - interval: fraction of entries to keep (0.0 < interval < 1.0)
     
     Returns
     - hist: truncated values
     """
+    hist_norm = normalize(hist, bins)
     hist = hist / np.sum(hist)
     bin_centers = (bins[1:]+bins[:-1])/2
     Mean = np.sum(hist_norm*bin_centers)

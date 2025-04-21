@@ -30,7 +30,7 @@ def get_color_range(entries, invert=False, mapName="plasma", maxLightness=0.85):
 def create_fig(cols=1, rows=1, figsize=None, sharex=True, sharey=True, flatten=True, **kwargs):
     if figsize is None:
         if cols==1 and rows==1:
-            figsize = [3.5,2.5]
+            figsize = [3,2]
         elif cols==2 and rows==2:
             figsize = [6,4.5]
         elif cols==2 and rows==4:
@@ -40,16 +40,19 @@ def create_fig(cols=1, rows=1, figsize=None, sharex=True, sharey=True, flatten=T
     fig, ax = plt.subplots(rows, cols, sharex=sharex, sharey=sharey, figsize=figsize, **kwargs)
     if (rows==1) and (cols==1):
         ax.tick_params("both", direction="in", top=True, right=True)
+        ax.ticklabel_format(axis="y", style="sci", scilimits=(0,3))
     else:
         ax = np.array(ax)
         if flatten:
             ax = ax.flatten()
             for i in range(len(ax)):
                 ax[i].tick_params("both", direction="in", top=True, right=True)
+                ax[i].ticklabel_format(axis="y", style="sci", scilimits=(0,3))
         else:
             for i in range(rows):
                 for j in range(cols):
                     ax[i,j].tick_params("both", direction="in", top=True, right=True)
+                    ax[i,j].ticklabel_format(axis="y", style="sci", scilimits=(0,3))
     fig.subplots_adjust(left=0, bottom=0, right=1, top=1)
     return fig, ax
 
@@ -59,6 +62,9 @@ def get_hist(run, dataString, binN=50, binRange=None, mask=None):
         hist, bins = np.histogram(run[dataString][mask], bins=binN, range=binRange)
     hist, bins = np.histogram(run[dataString], bins=binN, range=binRange)
     return hist, bins
+
+def text(ax, x, y, text, ha="left", va="top", fontdict={"size":"medium"}, **kwargs):
+    return ax.text(x, y, text, transform=ax.transAxes, ha=ha, fontdict=fontdict, va=va)
 
 # --- finalize ---
 
@@ -139,7 +145,7 @@ def finalize(single_run, fig, ax,
     
     title_y0 = 1.007
     
-    param_dict = {"campaign":True, "run":True, "sample":False, "ER1Param":True, "recoParam":False, "fontsize":8} | param_dict
+    param_dict = {"campaign":True, "run":False, "sample":False, "ER1Param":True, "recoParam":False, "fontsize":8} | param_dict
     draw_parameter_string_(single_run, fig, showDict=param_dict, x=title_x1, y=title_y0)
 
     # -- call finalize_noRun --
@@ -155,7 +161,7 @@ def pull_up_ax(fig, ax):
     bottom = 1 - height
     ax.set_position([left, bottom, widht, height])
 
-def savefig(fig, filename, path="/home/jona/DESY/analysis_python/output/", dpi=300):
+def savefig(fig, filename, path="/home/jona/DESY/analysis_python/output/", dpi=300, thesis_copy=False):
     if not path.endswith("/"):
         path += "/"
     if filename.find(".pdf")>0:
@@ -173,6 +179,13 @@ def savefig(fig, filename, path="/home/jona/DESY/analysis_python/output/", dpi=3
     
     fig.savefig(path+filename+".pdf", bbox_inches='tight', pad_inches=0.01, dpi=dpi)
     fig.savefig(path+filename+".png", bbox_inches='tight', pad_inches=0.01, dpi=dpi)
+    
+    if thesis_copy:
+        # only take the actual filename, not subfolders
+        if filename.find("/")>0:
+            filename = filename.split("/")[-1]
+        
+        fig.savefig(path+"thesis/"+filename+".pdf", bbox_inches='tight', pad_inches=0.01, dpi=dpi)
 
 def draw_parameter_string_(single_run, fig, showDict, x=0.95, y=1.008):
     def add_entry_(txt, to_add, sep=" | "):

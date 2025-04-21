@@ -115,7 +115,8 @@ class Hist_2D:
             binWidthX, binWidthY = self.getBinWidthX(0), self.getBinWidthY(0)
             im = ax.imshow(self.val.T, extent=[self.binsX[0]-binWidthX, self.binsX[-1]+binWidthX, self.binsY[0]-binWidthY, self.binsY[-1]+binWidthY], origin='lower', **kwargs)
             ax.plot([self.binsX[0],self.binsX[-1],self.binsX[-1],self.binsX[0],self.binsX[0]], [self.binsY[0],self.binsY[0],self.binsY[-1],self.binsY[-1],self.binsY[0]], color='black', linestyle=":")
-        ax.set_aspect(aspect, adjustable="box", anchor="NW")
+        if aspect is not None:
+            ax.set_aspect(aspect, adjustable="box", anchor="NW")
         
         if ax_cbar is not None:
             if ax_cbar is "auto":
@@ -124,7 +125,7 @@ class Hist_2D:
                 width = 0.04
                 ax_cbar = ax.get_figure().add_axes([1.01, y0, width, 1-y0])   
             cbar = plt.colorbar(im, cax=ax_cbar)
-            cbar.set_label(cbar_label, loc="top", labelpad=0.5)
+            cbar.set_label(cbar_label, loc="top", labelpad=1)
             ax_cbar.tick_params(axis="y", direction="in", )
         return im, ax_cbar
 
@@ -193,6 +194,7 @@ class Plot_2D(Hist_2D):
             self.data[xs[i],ys[i]] = np.append(self.data[xs[i],ys[i]], [zs[i]]) # appends each z to the list of entries in its corresponding bin
         self.analyseData()
     
+    # Fill the histogram with a 2D array of values. The shape of the array needs to be the same as the histogram
     def fillEveryBin(self, values, overflow=True, runAnalyse=True):
         if overflow:
             if values.shape != self.data.shape:
@@ -200,10 +202,10 @@ class Plot_2D(Hist_2D):
         else:
             if values.shape != self.data[1:-1,1:-1].shape:
                 raise ValueError("[ERROR] Plot_2D.fillEveryBin(): shape of entries ("+str(values.shape)+") array needs to have same shape as histogram ("+str(self.data[1:-1,1:-1].shape)+"). overflow=False")
-        overflow = not overflow # invert overflow to make the loop look nicer. shift by +1 if there are no overflow bins in the new values
+        # shift by +1 if there are no overflow bins in the new values
         for binX in range(len(values)):
             for binY in range(len(values[0])):
-                self.data[binX+overflow, binY+overflow] = np.append(self.data[binX, binY], [values[binX, binY]])
+                self.data[binX+(not overflow), binY+(not overflow)] = np.append(self.data[binX, binY], [values[binX, binY]])
         if runAnalyse:
             self.analyseData()
         
