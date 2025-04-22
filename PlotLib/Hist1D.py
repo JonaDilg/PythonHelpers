@@ -7,7 +7,7 @@ from uncertainties import ufloat as uf
 from uncertainties.unumpy import uarray as uarr
 import ROOT
 
-def curve_fit_wrapper(hist, bins, fitfunc, mask=None, sigma=None, p0=None, bounds=[-np.inf,np.inf], **kwargs):
+def curve_fit_wrapper(hist, bins, fitfunc, mask=None, sigma=None, p0=None, bounds=[-np.inf,np.inf], return_pcov=False, **kwargs):
     from scipy.optimize import curve_fit
     
     # fit function needs to be defined as f(x, *p)
@@ -40,6 +40,8 @@ def curve_fit_wrapper(hist, bins, fitfunc, mask=None, sigma=None, p0=None, bound
     
     ndeg = len(hist) - len(popt)
         
+    if return_pcov:
+        return popt, perr, pcov, chi2, ndeg
     return popt, perr, chi2, ndeg
 
 def normalize(hist, bins):

@@ -57,7 +57,6 @@ def importTH1(rTH1, rebin=None, scaleX=1, scaleY=1):
       
     if rebin is not None:
         rTH1.Rebin(rebin)
-        print(f"BinWidth after rebinning = {rTH1.GetBinWidth(1)/1E9/60:.1f} min")
     
     binN = rTH1.GetNbinsX()
     bins = np.zeros(binN+1)
@@ -70,6 +69,8 @@ def importTH1(rTH1, rebin=None, scaleX=1, scaleY=1):
     
     bins = bins * scaleX # convert to h
     hist = hist * scaleY # convert to um
+    
+    print(f"import.TH1(): final binWidth = {rTH1.GetBinWidth(1) * scaleX:.2e}")
     
     return hist, bins
 

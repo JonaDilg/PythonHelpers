@@ -151,7 +151,6 @@ def pdfLanGau(x, par):
     if (sigma > 5 * eta):
         nConvSteps *= int(sigma / eta / 5.)
 
-
     if is_number_(x):
         x = np.array([x])
 
