@@ -6,9 +6,10 @@ from matplotlib import pyplot as plt
 from uncertainties import ufloat as uf
 from uncertainties.unumpy import uarray as uarr
 import ROOT
+from scipy.optimize import curve_fit
+from scipy.odr import ODR, Model, RealData
 
 def curve_fit_wrapper(hist, bins, fitfunc, mask=None, sigma=None, p0=None, bounds=[-np.inf,np.inf], return_pcov=False, **kwargs):
-    from scipy.optimize import curve_fit
     
     # fit function needs to be defined as f(x, *p)
     # p0 is the initial guess for the fit parameters
@@ -44,6 +45,56 @@ def curve_fit_wrapper(hist, bins, fitfunc, mask=None, sigma=None, p0=None, bound
         return popt, perr, pcov, chi2, ndeg
     return popt, perr, chi2, ndeg
 
+# def odr_fit_wrapper(x, y, func, p0, x_err=None, y_err=None, bounds=None, return_pcov=False, **kwargs):
+#     """
+#     Wrapper for scipy.odr fitting, similar to curve_fit_wrapper.
+
+#     Parameters:
+#     - x, y: array-like
+#         Independent and dependent data values.
+#     - x_err, y_err: array-like or None
+#         Uncertainties in x and y.
+#     - model_func: callable
+#         Function to fit, must take (x, *params) as arguments.
+#     - p0: list or array
+#         Initial parameter guesses.
+#     - bounds: tuple or None
+#         Bounds for the fit parameters (min, max).
+#     - return_pcov: bool
+#         If True, return the covariance matrix along with the fit results.
+
+#     Returns:
+#     - popt: array
+#         Best-fit parameters.
+#     - perr: array
+#         1-sigma uncertainties on parameters.
+#     - chi2: float
+#         Chi-squared of the fit.
+#     - ndeg: int
+#         Number of degrees of freedom.
+#     - [optional] pcov: array
+#         Parameter covariance matrix (if return_pcov is True).
+#     """
+#     # Define the model for ODR
+#     def odr_model(beta, x):
+#         return func(x, *beta)
+
+#     model = Model(odr_model)
+#     data = RealData(x, y, sx=x_err, sy=y_err)
+#     odr = ODR(data, model, beta0=p0)
+#     output = odr.run()
+
+#     popt = output.beta
+#     perr = output.sd_beta
+#     chi2 = output.res_var * len(x)  # Rescaled chi-squared
+#     ndeg = len(x) - len(popt)  # Degrees of freedom
+
+#     if return_pcov:
+#         pcov = output.cov_beta
+#         return popt, perr, pcov, chi2, ndeg
+
+#     return popt, perr, chi2, ndeg
+
 def normalize(hist, bins):
     """
     Normalize a histogram to the integral of the PDF. (ie. the area under it is 1)
@@ -55,7 +106,7 @@ def normalize(hist, bins):
     Returns:
     - The normalized histogram.
     """
-    return arr(hist) / np.sum(hist) / np.diff(bins)
+    return arr(hist) / np.sum(hist * np.diff(bins))
 
 def truncate_array(entries, interval=0.95):
     """
@@ -77,8 +128,6 @@ def truncate_array(entries, interval=0.95):
     print("truncated. Removed " , N-len(entries) , " entries, kept " , len(entries) , " entries.")
     return entries
     
-    
-    
 def truncate_hist(hist, bins, interval=0.95):
     """
     Truncate a 1D histogram to a certain interval. Cuts off the tails of the histogram., does not change the bin content of bins on the edge.
@@ -91,10 +140,7 @@ def truncate_hist(hist, bins, interval=0.95):
     Returns
     - hist: truncated values
     """
-    hist_norm = normalize(hist, bins)
-    hist = hist / np.sum(hist)
-    bin_centers = (bins[1:]+bins[:-1])/2
-    Mean = np.sum(hist_norm*bin_centers)
+    hist_norm = hist / np.sum(hist)
     Stop = (1-interval)/2
 
     S = 0
@@ -111,7 +157,7 @@ def truncate_hist(hist, bins, interval=0.95):
             break
     
     # need to include bin i_up, thus return up to i_up+1
-    return hist[i_low:i_up+1], bins[i_low:i_up+2]
+    return hist[i_low:i_up+1].copy(), bins[i_low:i_up+2].copy()
 
 def rebin(hist, bins, factor):
     """
@@ -139,6 +185,38 @@ def rebin(hist, bins, factor):
     for i in range(new_binN):
         new_hist[i] = np.sum(hist[i*factor:(i+1)*factor])
     return new_hist, new_bins
+
+def get_Mean(hist, bins):
+    """
+    Get the mean of a histogram.
+    
+    Parameters
+    - hist: values of the histogram
+    - bins: bin edges (len(bins) = len(hist)+1)
+    
+    Returns
+    - mean: mean of the histogram
+    """
+    rTH1 = ROOT.TH1F("rTH1","rTH1",len(hist),bins[0],bins[-1])
+    for i in range(len(hist)):
+        rTH1.SetBinContent(i+1,hist[i])
+    return uf(rTH1.GetMean(), rTH1.GetMeanError())
+
+def get_StdDev(hist, bins):
+    """
+    Get the standard deviation of a histogram.
+    
+    Parameters
+    - hist: values of the histogram
+    - bins: bin edges (len(bins) = len(hist)+1)
+    
+    Returns
+    - std: standard deviation of the histogram
+    """
+    rTH1 = ROOT.TH1F("rTH1","rTH1",len(hist),bins[0],bins[-1])
+    for i in range(len(hist)):
+        rTH1.SetBinContent(i+1,hist[i])
+    return uf(rTH1.GetStdDev(), rTH1.GetStdDevError())
 
 class fitter():
     def __init__(self, hist, bins, func, range_fit=None, NofPointsFFT=1000, fit_options=None):

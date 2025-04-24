@@ -10,6 +10,34 @@ mpl.rcParams["mathtext.it"] = "CMU serif:italic"
 mpl.rcParams["mathtext.bf"] = "CMU serif:bold"
 mpl.rcParams["font.family"] = "serif"
 
+def finalize_map(ax, N=4, **kwargs):
+    if N == 1:
+        ax.set_xlim(0, 35)
+        ax.set_ylim(0, 25)
+        ax.set_xticks(np.linspace(0, 35, 5))
+        ax.set_yticks(np.linspace(0, 25, 5))
+    elif N == 4:
+        ax.set_xlim(0, 70)
+        ax.set_ylim(0, 50)
+        ax.set_xticks(np.linspace(0, 70, 5))
+        ax.set_yticks(np.linspace(0, 50, 5))
+    else: 
+        raise ValueError("N (number of electrodes to draw) must be 1 or 4")
+    ax.set_aspect('equal')
+    draw_electrodes(ax, N=N, **kwargs)
+    return
+        
+def draw_electrodes(ax, N=4, color="black", lw=0.7, ls="", marker="x", **kwargs):
+    ax.plot(35/2, 25/2, color=color, lw=lw, ls=ls, marker=marker, **kwargs)
+    if N == 1:
+        return
+    if N == 4:
+        ax.plot(35/2, 3*25/2, color=color, lw=lw, ls=ls, marker=marker, **kwargs)
+        ax.plot(3*35/2, 25/2, color=color, lw=lw, ls=ls, marker=marker, **kwargs)
+        ax.plot(3*35/2, 3*25/2, color=color, lw=lw, ls=ls, marker=marker, **kwargs)
+        return
+    raise ValueError("N (number of electrodes to draw) must be 1 or 4")
+
 # entries can be either 
 # - (a) a number -> generates n evenly spaced colors from the colormap
 # - (b) an array -> maps the values in n to the colormap
@@ -38,21 +66,22 @@ def create_fig(cols=1, rows=1, figsize=None, sharex=True, sharey=True, flatten=T
         else:
             figsize = (5+1.5*(cols-1),3.5+1.5*(rows-1))
     fig, ax = plt.subplots(rows, cols, sharex=sharex, sharey=sharey, figsize=figsize, **kwargs)
+    scilimits = (-1,3)
     if (rows==1) and (cols==1):
         ax.tick_params("both", direction="in", top=True, right=True)
-        ax.ticklabel_format(axis="y", style="sci", scilimits=(0,3))
+        ax.ticklabel_format(axis="y", style="sci", scilimits=scilimits)
     else:
         ax = np.array(ax)
         if flatten:
             ax = ax.flatten()
             for i in range(len(ax)):
                 ax[i].tick_params("both", direction="in", top=True, right=True)
-                ax[i].ticklabel_format(axis="y", style="sci", scilimits=(0,3))
+                ax[i].ticklabel_format(axis="y", style="sci", scilimits=scilimits)
         else:
             for i in range(rows):
                 for j in range(cols):
                     ax[i,j].tick_params("both", direction="in", top=True, right=True)
-                    ax[i,j].ticklabel_format(axis="y", style="sci", scilimits=(0,3))
+                    ax[i,j].ticklabel_format(axis="y", style="sci", scilimits=scilimits)
     fig.subplots_adjust(left=0, bottom=0, right=1, top=1)
     return fig, ax
 

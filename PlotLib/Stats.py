@@ -2,7 +2,10 @@ import numpy as np
 import ROOT
 from numdifftools import Hessian
 from scipy.optimize import minimize
+# from scipy.integrate import simps
 # from scipy.integrate import quad
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 
 # -- Helpers --
 
@@ -43,6 +46,17 @@ def LikelihoodFit(data, PDF, par0, bounds=None, maxiter=10000, est_unc=True):
 
 # -- PDFs --
 
+def pdfNormal(x, sigma):
+    """
+    PDF of a normal distribution. (Gaussian centered at 0)
+
+    Parameters
+    - x: point at which to evaluate the PDF
+    - sigma: standard deviation of the normal distribution
+    """
+    func = np.vectorize(ROOT.TMath.Gaus, excluded=[1,2,3])
+    return func(x, 0, sigma, True)
+
 def pdfGauss(x, par):
     """
     PDF of a Gaussian.
@@ -54,6 +68,14 @@ def pdfGauss(x, par):
     mu, sigma = par
     func = np.vectorize(ROOT.TMath.Gaus, excluded=[1,2,3])
     return func(x, mu, sigma, True)
+
+def pdfGumbel(x, par):
+    """
+    PDF of a Gumbel distribution.
+            fgumbel = pdfGumbel(x, mu, beta)
+    """
+    z = (x - par[0]) / par[1]
+    return np.exp(-z - np.exp(-z)) / par[0]
 
 def pdfLandau(x, par):
     """
@@ -129,6 +151,23 @@ def pdfLandau_manual(xs, par): # same algorithm is used in GSL
         return res[0]
     return res
 
+def _LanGau_ConvolutionIntegral(x_i, sc, sigma, mu, eta, nConvSteps):
+    # Range of convolution integral
+    xlow = x_i - sc * sigma
+    xupp = x_i + sc * sigma
+
+    step = (xupp - xlow) / nConvSteps
+
+    # Discrete linear convolution of Landau and Gaussian
+    sum = 0
+    for i in range(1,int(nConvSteps/2)+1):
+        xx = xlow + (i - 0.5) * step
+        sum += pdfLandau(xx, [mu, eta]) / eta * pdfGauss(x_i, [xx, sigma])
+
+        xx = xupp - (i - 0.5) * step
+        sum += pdfLandau(xx, [mu, eta]) / eta * pdfGauss(x_i, [xx, sigma])
+    return (step * sum) / np.sqrt(2 * np.pi) / sigma
+
 def pdfLanGau(x, par):
     """
     PDF of convolution of Landau and Gaussian functions.
@@ -154,6 +193,15 @@ def pdfLanGau(x, par):
     if is_number_(x):
         x = np.array([x])
 
+    # new implementation using multiprocessing
+    # ConvolutionIntegral_partial = partial(_LanGau_ConvolutionIntegral, sc=sc, sigma=sigma, mu=mu, eta=eta, nConvSteps=nConvSteps)
+    # with ProcessPoolExecutor() as executor:
+    #     x_res = list(executor.map(ConvolutionIntegral_partial, x))
+    # if len(x_res) == 1:
+    #     return x_res[0]
+    # return np.array(x_res)
+    
+    # old implementation without multiprocessing. For some reason this is MUCH (~ 10x) faster than the above.
     for i_x in range(len(x)):
         # Range of convolution integral
         xlow = x[i_x] - sc * sigma
@@ -174,3 +222,23 @@ def pdfLanGau(x, par):
         return x[0]
     return x
 
+def convoluteGauss(x, sigma, par, pdf):
+    """
+    Convolute a function with a Gaussian.
+
+    Parameters
+    - x: point at which to evaluate the convolution
+    - par: (sigma, [par]) of the Gaussian
+    - func: function to convolute with the Gaussian
+    """
+    nConvSteps = 500
+    nSigmaRange = 5
+    
+    x_kernel = np.linspace(x - nSigmaRange * sigma, x + nSigmaRange * sigma, nConvSteps)
+    
+    # Evaluate original PDF and Gaussian kernel
+    y_pdf = pdf(x_kernel, par)
+    y_gauss = pdfNormal(x - x_kernel, sigma)
+    
+    # Compute the convolution via numerical integration
+    return np.trapezoid(y_pdf * y_gauss, x_kernel)
