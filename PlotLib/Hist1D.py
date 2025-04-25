@@ -186,7 +186,7 @@ def rebin(hist, bins, factor):
         new_hist[i] = np.sum(hist[i*factor:(i+1)*factor])
     return new_hist, new_bins
 
-def get_Mean(hist, bins):
+def get_Mean(hist, bins, truncateInterval=None):
     """
     Get the mean of a histogram.
     
@@ -197,12 +197,14 @@ def get_Mean(hist, bins):
     Returns
     - mean: mean of the histogram
     """
+    if truncateInterval is not None:
+        hist, bins = truncate_hist(hist, bins, truncateInterval)
     rTH1 = ROOT.TH1F("rTH1","rTH1",len(hist),bins[0],bins[-1])
     for i in range(len(hist)):
         rTH1.SetBinContent(i+1,hist[i])
     return uf(rTH1.GetMean(), rTH1.GetMeanError())
 
-def get_StdDev(hist, bins):
+def get_StdDev(hist, bins, truncateInterval=None):
     """
     Get the standard deviation of a histogram.
     
@@ -213,6 +215,8 @@ def get_StdDev(hist, bins):
     Returns
     - std: standard deviation of the histogram
     """
+    if truncateInterval is not None:
+        hist, bins = truncate_hist(hist, bins, truncateInterval)
     rTH1 = ROOT.TH1F("rTH1","rTH1",len(hist),bins[0],bins[-1])
     for i in range(len(hist)):
         rTH1.SetBinContent(i+1,hist[i])

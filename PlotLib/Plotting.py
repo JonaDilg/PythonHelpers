@@ -51,11 +51,11 @@ def get_color_range(entries, invert=False, mapName="plasma", maxLightness=0.85):
     else:
         raise TypeError("n must be a number or a list/np.ndarray")
     colors  = cmap(entries)
-    if invert:
+    if not invert:
         colors = colors[::-1]
     return colors
 
-def create_fig(cols=1, rows=1, figsize=None, sharex=True, sharey=True, flatten=True, **kwargs):
+def create_fig(cols=1, rows=1, figsize=None, sharex=False, sharey=False, flatten=True, **kwargs):
     if figsize is None:
         if cols==1 and rows==1:
             figsize = [3,2]
@@ -66,7 +66,7 @@ def create_fig(cols=1, rows=1, figsize=None, sharex=True, sharey=True, flatten=T
         else:
             figsize = (5+1.5*(cols-1),3.5+1.5*(rows-1))
     fig, ax = plt.subplots(rows, cols, sharex=sharex, sharey=sharey, figsize=figsize, **kwargs)
-    scilimits = (-1,3)
+    scilimits = (-2,3)
     if (rows==1) and (cols==1):
         ax.tick_params("both", direction="in", top=True, right=True)
         ax.ticklabel_format(axis="y", style="sci", scilimits=scilimits)
@@ -272,7 +272,28 @@ def draw(ax, hist, bins, color="black", label=None, fill_alpha=0.2, lw=None, **k
     ax.stairs(hist, bins, fill=False, alpha=1, color=color, lw=lw, label=label, **kwargs)
     ax.stairs(hist, bins, fill=True, alpha=fill_alpha, color=color, lw=0, **kwargs)
     
+def plot(ax, x, y, xerr=None, yerr=None, color="black", label=None, line_alpha=0.5, lw=1, **kwargs):
+    # ax.plot(x, y, color=color, ls="", marker=".", label=label, **kwargs)
+    ax.errorbar(x, y, xerr=xerr, yerr=yerr, color=color, marker=".", ls="", label=label, lw=1, capsize=2.5, **kwargs)
+    ax.plot(x, y, color=color, alpha=line_alpha, lw=lw, marker="", **kwargs)
+    
 # --- drawing multiple histograms on the same plot ---
+
+def draw_stack(ax, hists, bins, colors=None, labels=None, baseline=None, alpha=0.2, **kwargs):
+    if not colors:
+        colors = np.array([["C{:d}".format(i)] for i in range(len(hists))]).flatten()
+    
+    base = np.array(hists).sum(axis=0) # do this so labels and hist are in the same order
+    if baseline is not None:
+        base += baseline
+    for i, hist in enumerate(hists):
+        base -= hist
+        if not labels:
+            ax.stairs(hist+base, bins, baseline=base, fill=False, alpha=1, color=colors[i], **kwargs)
+            ax.stairs(hist+base, bins, baseline=base, fill=True, alpha=alpha, color=colors[i], lw=0, **kwargs)
+        else: 
+            ax.stairs(hist+base, bins, baseline=base, fill=False, alpha=1, color=colors[i], label=labels[i], **kwargs)
+            ax.stairs(hist+base, bins, baseline=base, fill=True, alpha=alpha, color=colors[i], lw=0, **kwargs)
 
 def createMask(single_run, dataColumn, limits):
     data = single_run["data"]
@@ -282,7 +303,7 @@ def createMask(single_run, dataColumn, limits):
     return masks
 
 def drawStacked(single_run, fig, ax, dataColumn, binN=50, binRange=None, masks=None, colors=None, labels=None):
-    
+    raise RuntimeError("drawStacked is deprecated. Use drawMultiple instead.")
     map = [1,3,0,2] # map pixel 1-4 to the locations in the 2x2 grid
     pix_names = ["00","01","10","11"]
     data = single_run["data"]
@@ -307,6 +328,8 @@ def drawStacked(single_run, fig, ax, dataColumn, binN=50, binRange=None, masks=N
             # hist, bins, _ = ax[i].hist(data[:,i_pix,dataColumn][mask[:,i_pix]], bins=binN, range=binRange, histtype="step", lw=1.5, zorder=100, color=colors[j], label=label)
             base += hist
         ax[i].set_xlim(binRange)
+        
+
         
 def drawMultiple(single_run, fig, ax, dataColumn, binN=50, binRange=None, masks=None, colors=None, labels=None):
     

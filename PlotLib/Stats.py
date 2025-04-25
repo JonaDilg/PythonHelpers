@@ -6,9 +6,44 @@ from scipy.optimize import minimize
 # from scipy.integrate import quad
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
+from uncertainties import ufloat as uf
 
 # -- Helpers --
 
+def getMean(entries, N=1000):
+    """
+    Get the mean of a 1-d array of measurements (ie. drawn from the distribution)
+    """
+    Mean = np.mean(entries)
+    Unc = getUnc_Bootstrap(entries, np.mean, N=N)
+    return uf(Mean, Unc)
+
+def getStdDev(entries, N=1000):
+    """
+    Get the standard deviation of a 1-d array of measurements (ie. drawn from the distribution)
+    """
+    Std = np.std(entries)
+    Unc = getUnc_Bootstrap(entries, np.std, N=1000)
+    return uf(Std, Unc)
+
+def getUnc_Bootstrap(entries, func, N=1000, *args):
+    """
+    Bootstrap resampling method to estimate the uncertainty of a function.
+
+    Parameters
+    - entries: 1-d array of measurements (ie. drawn from the distribution)
+    - func: function to evaluate on the resampled data
+    - n: number of bootstrap samples
+    - args: additional arguments to pass to the function
+
+    Returns: mean, std
+    - mean: mean of the function evaluated on the bootstrap samples
+    - std: standard deviation of the function evaluated on the bootstrap samples
+    """
+    vals = np.zeros(N)
+    for i in range(N):
+        vals[i] = func(np.random.choice(entries, size=len(entries), replace=True), *args)
+    return np.std(vals)
 
 
 # -- Fitting --

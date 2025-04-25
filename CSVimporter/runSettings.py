@@ -14,7 +14,7 @@ charge_calibration = {
     7: arr([11475.03528696, 12401.21084898, 13477.9489228 , 11842.22663386])}
 
 M_AnalysisWF = {"TriggerID":0, "Timestamp":1, "PixCol":2, "PixRow":3, "PixInCluster":4, "Charge":5, 
-         "Baseline":6, "Amplitude":7, "NoiseRMS":8, "Risetime":9, "Falltime":10, "ToA":11, "ToT":12, "ClstSize":13, "ClstCol":14, "ClstRow":15, "ClstCharge":16, "TrkX":17, "TrkY":18, "TrkCol":19, "TrkRow":20, "TrkResX":21, "TrkResY":22}
+         "Baseline":6, "Amplitude":7, "NoiseRMS":8, "Risetime":9, "Falltime":10, "ToA":11, "ToT":12, "ClstSize":13, "ClstCol":14, "ClstRow":15, "ClstCharge":16, "TrkX":17, "TrkY":18, "TrkCol":19, "TrkRow":20, "TrkResX":21, "TrkResY":22, "TrkChi2ndof":23}
 M_WFDigitizer = {"TriggerID":0, "EventStartTime":1, "PixCol":2, "PixRow":3, 
     "BaselineEst":4, "AmplitudeEst":5, "ChargeEst":6,"NoiseRMS":7,
     "Baseline":8, "Amplitude":9, "Charge":10, "Risetime":11, "ToA":12, "ToT":13, "Timestamp":14} # new & corrected. in use from 2025-03-11

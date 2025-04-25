@@ -32,7 +32,7 @@ def load_scan(runID, name, entries, n=None):
 # usage: load_data(run, runID, n=None)
 # adds data to run_dict[runID]["data"]
 def load_data(run, filepath,  n=4*2E6):
-    dataRaw = np.genfromtxt(filepath, delimiter=',', skip_header=1, max_rows=n)
+    dataRaw = np.genfromtxt(filepath, delimiter=',', skip_header=1, max_rows=n, usecols=np.arange(0,24), dtype=float)
 
     # remove non-complete events from the back
     counter = 0
