@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 # from PlotLib.Stats import pdfLanGau
 import PlotLib.Hist1D as Hist1D
+import PlotLib.Stats as Stats
 
 def is_number_(val):
     return isinstance(val, (float, np.floating, int, np.integer))
@@ -45,11 +46,6 @@ class Hist_2D:
             
     def getBinsX(self):
         return self.binsX
-    def getBinsY(self):
-        return self.binsY
-            
-    def getBinIndex(self, x, y):
-        return self.getBinIndexX(x), self.getBinIndexY(y)
     def getBinIndexX(self, x):
         try:
             return arr(np.where(np.logical_and(x>=self.binsX[:-1], x<self.binsX[1:]))).flatten()[0]+1
@@ -127,7 +123,7 @@ class Hist_2D:
             cbar = plt.colorbar(im, cax=ax_cbar)
             cbar.set_label(cbar_label, loc="top", labelpad=1)
             ax_cbar.tick_params(axis="y", direction="in", )
-        return im, ax_cbar
+        return im, ax_cbar, cbar
 
     def printOverflow(self):
         print("Overflow:")
@@ -148,7 +144,7 @@ class Plot_2D(Hist_2D):
         - inBin_binRange: 2-length list - range of the in-bin histogram
         """
         super().__init__(bins, binRange, poisson_stat=False)
-        allowed_statistics = ["Mean", "MPV", "MedianBootstrap", "LanGau-MPV"]
+        allowed_statistics = ["Mean", "MPV", "MedianBootstrap", "LanGau-MPV", "StdDev"]
         if statistic not in allowed_statistics:
             raise ValueError("Plot_2D.__init__(): statistic needs to be one of:", allowed_statistics)
         self.statistic = statistic
@@ -223,13 +219,17 @@ class Plot_2D(Hist_2D):
                         val = temp.n
                         unc = temp.s
                     elif self.statistic == "MedianBootstrap":
-                        if len(self.data[binX, binY]) < 100:
+                        if len(self.data[binX, binY]) < 20:
                             print("[WARN] Plot_2D.fill_hist_(): MedianBootstrap needs at least 100 entries per bin")
                         temp = self.get_median_bootstrap_(self.data[binX, binY])
                         val = temp.n
                         unc = temp.s
                     elif self.statistic == "LanGau-MPV":
                         temp = self.get_LanGau_MPV(self.data[binX, binY],binXY=[binX,binY])
+                        val = temp.n
+                        unc = temp.s
+                    elif self.statistic == "StdDev":
+                        temp = self.get_StdDev_(self.data[binX, binY])
                         val = temp.n
                         unc = temp.s
                     else:
@@ -240,11 +240,8 @@ class Plot_2D(Hist_2D):
     
     def get_mean_(self, entries):
         if self.truncate is not None:
-            entries.sort()
-            entries = entries[:int(len(entries)*self.truncate)].copy()
-        n = np.mean(entries)
-        s = np.std(entries)
-        return uf(n,s)
+            Hist1D.truncate_array(entries, self.truncate)
+        return Stats.getMean(entries)
     
     def get_MPV_(self, entries):
         if self.truncate is not None:
@@ -259,6 +256,11 @@ class Plot_2D(Hist_2D):
         n = bins[np.where(hist == hist.max())[0][0]] + (bins[1]-bins[0]) / 2
         s = (bins[1]-bins[0]) / 2
         return uf(n,s)
+    
+    def get_StdDev_(self, entries):
+        if self.truncate is not None:
+            entries = Hist1D.truncate_array(entries, self.truncate)
+        return Stats.getStdDev(entries)
 
     def get_median_bootstrap_(self, entries):
         medians = np.zeros(self.Bootstrap_N)
@@ -276,7 +278,7 @@ class Plot_2D(Hist_2D):
             ax.set_title("Median Bootstrap (N="+str(self.Bootstrap_N)+")")
             ax.set_xlabel("Median", loc="right")
             ax.set_ylabel("Counts", loc="top")
-        return uf(np.mean(medians), np.std(medians))
+        return uf(np.median(entries), np.std(medians))
     
     def get_LanGau_MPV(self, entries, binXY=None):
         binN = int(np.sqrt(len(entries)))

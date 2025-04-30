@@ -28,15 +28,15 @@ def curve_fit_wrapper(hist, bins, fitfunc, mask=None, sigma=None, p0=None, bound
     mask_nonzero = hist>0
     mask = np.logical_and(mask, mask_nonzero)
     hist = hist[mask]
-    bins = (bins[:-1]+bins[1:])/2
+    binCenters = (bins[:-1]+bins[1:])/2
     # bins = bins[:-1]+(bins[1]-bins[0])/2
-    bins = bins[mask]
+    binCenters = binCenters[mask]
     sigma = sigma[mask]
     
-    popt, pcov = curve_fit(fitfunc, bins, hist, sigma=sigma, p0=p0, bounds=bounds, check_finite=True, absolute_sigma=True, **kwargs)
+    popt, pcov = curve_fit(fitfunc, binCenters, hist, sigma=sigma, p0=p0, bounds=bounds, check_finite=True, absolute_sigma=True, **kwargs)
     
     perr = np.sqrt(np.diag(pcov))
-    dx = fitfunc(bins, *popt) - hist
+    dx = fitfunc(binCenters, *popt) - hist
     chi2 = np.sum(dx**2 / hist)
     
     ndeg = len(hist) - len(popt)
@@ -125,7 +125,6 @@ def truncate_array(entries, interval=0.95):
     entries = np.sort(entries)
     N = len(entries)
     entries = entries[int(N*(1-interval)/2):int(N*(1+interval)/2)]
-    print("truncated. Removed " , N-len(entries) , " entries, kept " , len(entries) , " entries.")
     return entries
     
 def truncate_hist(hist, bins, interval=0.95):
@@ -186,6 +185,35 @@ def rebin(hist, bins, factor):
         new_hist[i] = np.sum(hist[i*factor:(i+1)*factor])
     return new_hist, new_bins
 
+def cut_and_overflow(hist, bins, maxVal):
+    """
+    Cut the histogram at maxVal, and add the overflow (that was cut away) to the last bin.
+    
+    Parameters
+    - hist: values of the histogram
+    - bins: bin edges (len(bins) = len(hist)+1)
+    - maxVal: maximum value of the histogram
+    
+    Returns
+    - hist: new values of the histogram
+    """
+    if len(hist) != len(bins)-1:
+        raise ValueError("add_overflow(): hist and bins must have the same length")
+    
+    maxBin = np.argmax(bins > maxVal)
+    if maxBin == 0:
+        print("WARNING: No bins below maxVal, returning original histogram")
+        return hist, bins
+    if maxBin == len(hist):
+        print("WARNING: All bins below maxVal, returning original histogram")
+        return hist, bins
+    
+    hist[maxBin] = np.sum(hist[maxBin:])
+    hist = hist[:maxBin+1]
+    bins = bins[:maxBin+2]
+    
+    return hist, bins
+
 def get_Mean(hist, bins, truncateInterval=None):
     """
     Get the mean of a histogram.
@@ -203,6 +231,28 @@ def get_Mean(hist, bins, truncateInterval=None):
     for i in range(len(hist)):
         rTH1.SetBinContent(i+1,hist[i])
     return uf(rTH1.GetMean(), rTH1.GetMeanError())
+
+def get_RMS(hist, bins, truncateInterval=None):
+    """
+    Get the RMS of a histogram.
+    
+    Parameters
+    - hist: values of the histogram
+    - bins: bin edges (len(bins) = len(hist)+1)
+    
+    Returns
+    - std: standard deviation of the histogram
+    """
+    if truncateInterval is not None:
+        hist, bins = truncate_hist(hist, bins, truncateInterval)
+    # rTH1 = ROOT.TH1F("rTH1","rTH1",len(hist),bins[0],bins[-1])
+    # for i in range(len(hist)):
+    #     rTH1.SetBinContent(i+1,hist[i])
+    binCenters = (bins[:-1]+bins[1:])/2
+    print(len(hist), len(bins), len(binCenters))
+    
+    RMS = np.sqrt(np.average(binCenters**2, weights=hist))
+    return uf(RMS, 0.)
 
 def get_StdDev(hist, bins, truncateInterval=None):
     """

@@ -10,7 +10,7 @@ mpl.rcParams["mathtext.it"] = "CMU serif:italic"
 mpl.rcParams["mathtext.bf"] = "CMU serif:bold"
 mpl.rcParams["font.family"] = "serif"
 
-def finalize_map(ax, N=4, **kwargs):
+def finalize_map(ax, N=4, color_electrodes="white", **kwargs):
     if N == 1:
         ax.set_xlim(0, 35)
         ax.set_ylim(0, 25)
@@ -21,10 +21,12 @@ def finalize_map(ax, N=4, **kwargs):
         ax.set_ylim(0, 50)
         ax.set_xticks(np.linspace(0, 70, 5))
         ax.set_yticks(np.linspace(0, 50, 5))
+        ax.axhline(25, color="black", lw=.8, linestyle="--", alpha=0.5)
+        ax.axvline(35, color="black", lw=.8, linestyle="--", alpha=0.5)
     else: 
         raise ValueError("N (number of electrodes to draw) must be 1 or 4")
     ax.set_aspect('equal')
-    draw_electrodes(ax, N=N, **kwargs)
+    draw_electrodes(ax, N=N, color=color_electrodes, **kwargs)
     return
         
 def draw_electrodes(ax, N=4, color="black", lw=0.7, ls="", marker="x", **kwargs):

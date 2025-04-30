@@ -10,21 +10,33 @@ from uncertainties import ufloat as uf
 
 # -- Helpers --
 
-def getMean(entries, N=1000):
+def getMean(entries, N=1000, truncateInterval=None):
     """
     Get the mean of a 1-d array of measurements (ie. drawn from the distribution)
     """
+    if truncateInterval is not None:
+        entries = truncateEntries(entries.copy(), truncateInterval)
     Mean = np.mean(entries)
     Unc = getUnc_Bootstrap(entries, np.mean, N=N)
     return uf(Mean, Unc)
 
-def getStdDev(entries, N=1000):
+def getStdDev(entries, N=1000, truncateInterval=None):
     """
     Get the standard deviation of a 1-d array of measurements (ie. drawn from the distribution)
     """
+    if truncateInterval is not None:
+        entries = truncateEntries(entries.copy(), truncateInterval)
     Std = np.std(entries)
     Unc = getUnc_Bootstrap(entries, np.std, N=1000)
     return uf(Std, Unc)
+
+def getMedian(entries, N=1000):
+    """
+    Get the median of a 1-d array of measurements (ie. drawn from the distribution)
+    """
+    Median = np.median(entries)
+    Unc = getUnc_Bootstrap(entries, np.median, N=N)
+    return uf(Median, Unc)
 
 def getUnc_Bootstrap(entries, func, N=1000, *args):
     """
@@ -45,6 +57,22 @@ def getUnc_Bootstrap(entries, func, N=1000, *args):
         vals[i] = func(np.random.choice(entries, size=len(entries), replace=True), *args)
     return np.std(vals)
 
+def truncateEntries(entries, interval):
+    """
+    Truncate entries to a given interval.
+
+    Parameters
+    - entries: 1-d array of measurements (ie. drawn from the distribution)
+    - interval: fraction of entries to keep (0.0 < interval < 1.0)
+
+    Returns: truncated entries
+    """
+    if interval is None or interval <= 0.0 or interval >= 1.0:
+        raise ValueError("Truncate interval must be between 0.0 and 1.0")
+    # entries = entries.sort()
+    entries.sort()
+    N = len(entries)
+    return entries[int(N*(1-interval)/2):int(N*(1+interval)/2)]
 
 # -- Fitting --
 
