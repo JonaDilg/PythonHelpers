@@ -2,11 +2,14 @@ import numpy as np
 import ROOT
 from numdifftools import Hessian
 from scipy.optimize import minimize
-# from scipy.integrate import simps
-# from scipy.integrate import quad
+from scipy.optimize import curve_fit
+from scipy.integrate import quad
+from scipy.stats import norm
+from scipy.special import erf
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from uncertainties import ufloat as uf
+
 
 # -- Helpers --
 
@@ -59,7 +62,7 @@ def getUnc_Bootstrap(entries, func, N=1000, *args):
 
 def truncateEntries(entries, interval):
     """
-    Truncate entries to a given interval.
+    Truncate entries to a given interval, retain the central set.
 
     Parameters
     - entries: 1-d array of measurements (ie. drawn from the distribution)
@@ -73,6 +76,39 @@ def truncateEntries(entries, interval):
     entries.sort()
     N = len(entries)
     return entries[int(N*(1-interval)/2):int(N*(1+interval)/2)]
+
+def truncateEntriesToLower(entries, keep):
+    """
+    Truncate entries to a given interval, retain the lower set.
+
+    Parameters
+    - entries: 1-d array of measurements (ie. drawn from the distribution)
+    - interval: fraction of entries to keep (0.0 < interval < 1.0)
+
+    Returns: truncated entries
+    """
+    if keep is None or keep <= 0.0 or keep >= 1.0:
+        raise ValueError("Truncate interval must be between 0.0 and 1.0")
+    # entries = entries.sort()
+    entries.sort()
+    N = len(entries)
+    return entries[:int(N*keep)]
+
+def truncateEntriesToUpper(entries, keep):
+    """
+    Truncate entries to a given interval, retain the upper set.
+
+    Parameters
+    - entries: 1-d array of measurements (ie. drawn from the distribution)
+    - interval: fraction of entries to keep (0.0 < interval < 1.0)
+
+    Returns: truncated entries
+    """
+    if keep is None or keep <= 0.0 or keep >= 1.0:
+        raise ValueError("Truncate interval must be between 0.0 and 1.0")
+    entries.sort()
+    N = len(entries)
+    return entries[int(N*keep):]
 
 # -- Fitting --
 
@@ -107,7 +143,75 @@ def LikelihoodFit(data, PDF, par0, bounds=None, maxiter=10000, est_unc=True):
         return res.x, unc
     return res.x, np.zeros_like(res.x)
 
+def curve_fit_wrapper(x, y, fitfunc, mask=None, sigma=None, p0=None, bounds=[-np.inf,np.inf], return_pcov=False, **kwargs):
+    
+    # fit function needs to be defined as f(x, *p)
+    # p0 is the initial guess for the fit parameters
+    # mask is the mask to apply to the data
+    
+    if len(x) == 0:
+        raise ValueError("curve_fit_wrapper(): x")
+    if len(x) != len(y):
+        raise ValueError("curve_fit_wrapper(): x and y must have the same length")
+    
+    if sigma is None:
+        sigma = np.sqrt(abs(x))
+    if mask is None:
+        mask = np.ones(len(x), dtype=bool)
+    
+    x = x[mask]
+    y = y[mask]
+    sigma = sigma[mask]
+    
+    popt, pcov = curve_fit(fitfunc, x, y, sigma=sigma, p0=p0, bounds=bounds, check_finite=True, absolute_sigma=True, **kwargs)
+    
+    perr = np.sqrt(np.diag(pcov))
+    dx = fitfunc(x, *popt) - y
+    chi2 = np.sum(dx**2 / sigma**2)
+    
+    ndeg = len(y) - len(popt)
+        
+    if return_pcov:
+        return popt, perr, pcov, chi2, ndeg
+    return popt, perr, chi2, ndeg
+
+
 # -- PDFs --
+
+def pdfStep(x, par):
+    """
+    PDF of a step function.
+
+    Parameters
+    - x: point at which to evaluate the PDF
+    - par: [x0, height] of the step function
+    """
+    x0, x1 = par
+    height = 1 / (x1 - x0) # integral = 1 
+    if x < x0 or x > x1:
+        return 0
+    return height
+pdfStep = np.vectorize(pdfStep, excluded=[1])
+
+def pdfStepGauss(x, par):
+    """
+    PDF of a step function convoluted with a Gaussian.
+
+    Parameters
+    - x: point at which to evaluate the PDF
+    - par: [x0, x1, sigma] pos. of the step function and Gaussian
+    """
+    x0, x1, sigma = par
+    # height = 1 / (x1 - x0) # integral = 1
+    
+    term1 = erf((x - x0) / (np.sqrt(2) * sigma))
+    term2 = erf((x - x1) / (np.sqrt(2) * sigma))
+    return 0.5 * (term1 - term2)
+    
+    term1 = erf((x1) / (np.sqrt(2) * sigma))
+    term2 = erf((x0) / (np.sqrt(2) * sigma))
+    return 0.5 / (x1-x0) * (term1 - term2)    
+pdfStepGauss = np.vectorize(pdfStepGauss, excluded=[1])
 
 def pdfNormal(x, sigma):
     """
@@ -291,17 +395,32 @@ def convoluteGauss(x, sigma, par, pdf):
 
     Parameters
     - x: point at which to evaluate the convolution
-    - par: (sigma, [par]) of the Gaussian
-    - func: function to convolute with the Gaussian
+    - sigma: standard deviation of the Gaussian
+    - par: tuple of parameters for the pdf
+    - pdf: function to convolute with the Gaussian, pdf(x, par)
     """
-    nConvSteps = 500
-    nSigmaRange = 5
+    # nConvSteps = 1000
+    # nSigmaRange = 8
     
-    x_kernel = np.linspace(x - nSigmaRange * sigma, x + nSigmaRange * sigma, nConvSteps)
+    # x_kernel = np.linspace(x - nSigmaRange * sigma, x + nSigmaRange * sigma, nConvSteps)
     
-    # Evaluate original PDF and Gaussian kernel
-    y_pdf = pdf(x_kernel, par)
-    y_gauss = pdfNormal(x - x_kernel, sigma)
+    # # Evaluate original PDF and Gaussian kernel
+    # y_pdf = pdf(x_kernel, par)
+    # y_gauss = pdfNormal(x - x_kernel, sigma)
     
-    # Compute the convolution via numerical integration
-    return np.trapezoid(y_pdf * y_gauss, x_kernel)
+    # # Compute the convolution via numerical integration
+    # return np.trapezoid(y_pdf * y_gauss, x_kernel)
+    
+        # Gaussian kernel
+    def gaussian_kernel(xp):
+        return norm.pdf(x - xp, scale=sigma)
+    
+    # Integrand: product of the function and the Gaussian
+    def integrand(xp):
+        return pdf(xp, par) * gaussian_kernel(xp)
+    
+    # Perform convolution integral over a wide enough range
+    result, _ = quad(integrand, x - 5*sigma, x + 5*sigma, limit=100)
+    # result, _ = quad(integrand, x - 10*sigma, x + 10*sigma, epsabs=1e-10, epsrel=1e-10, limit=500)
+
+    return result

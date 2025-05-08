@@ -115,7 +115,7 @@ class Hist_2D:
             ax.set_aspect(aspect, adjustable="box", anchor="NW")
         
         if ax_cbar is not None:
-            if ax_cbar is "auto":
+            if ax_cbar == "auto":
                 y0 = ax.get_position().y0
                 pad = 0.01
                 width = 0.04

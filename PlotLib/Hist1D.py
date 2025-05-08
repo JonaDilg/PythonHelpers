@@ -37,7 +37,7 @@ def curve_fit_wrapper(hist, bins, fitfunc, mask=None, sigma=None, p0=None, bound
     
     perr = np.sqrt(np.diag(pcov))
     dx = fitfunc(binCenters, *popt) - hist
-    chi2 = np.sum(dx**2 / hist)
+    chi2 = np.sum(dx**2 / sigma**2)
     
     ndeg = len(hist) - len(popt)
         
@@ -245,14 +245,15 @@ def get_RMS(hist, bins, truncateInterval=None):
     """
     if truncateInterval is not None:
         hist, bins = truncate_hist(hist, bins, truncateInterval)
-    # rTH1 = ROOT.TH1F("rTH1","rTH1",len(hist),bins[0],bins[-1])
-    # for i in range(len(hist)):
-    #     rTH1.SetBinContent(i+1,hist[i])
-    binCenters = (bins[:-1]+bins[1:])/2
-    print(len(hist), len(bins), len(binCenters))
+    rTH1 = ROOT.TH1F("rTH1","rTH1",len(hist),bins[0],bins[-1])
+    for i in range(len(hist)):
+        rTH1.SetBinContent(i+1,hist[i])
+    return uf(rTH1.GetRMS(), rTH1.GetRMSError())
+    # binCenters = (bins[:-1]+bins[1:])/2
+    # print(len(hist), len(bins), len(binCenters))
     
-    RMS = np.sqrt(np.average(binCenters**2, weights=hist))
-    return uf(RMS, 0.)
+    # RMS = np.sqrt(np.average(binCenters**2, weights=hist))
+    # return uf(RMS, 0.)
 
 def get_StdDev(hist, bins, truncateInterval=None):
     """

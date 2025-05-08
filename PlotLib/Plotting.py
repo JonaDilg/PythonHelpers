@@ -253,7 +253,7 @@ def draw_parameter_string_(single_run, fig, showDict, x=0.95, y=1.008):
         if "thr" not in showDict:
             raise ValueError("ERROR(Histogramming): key \"thr\" not found in showDict. Is needed if \"ER1Param\" is True. Set to None if not needed.")
         if showDict["thr"] is not None:
-            txt = add_entry_(txt, "thr=" + str(showDict["thr"]) + r"$\,e^-$")
+            txt = add_entry_(txt, "thr=" + str(showDict["thr"]) + " e")
     if showDict["recoParam"]:
         txt += r"$\,$"+"\n"
         minEntries = ["edgeCut", "minTrkPlanes"]
@@ -270,9 +270,15 @@ def draw_parameter_string_(single_run, fig, showDict, x=0.95, y=1.008):
     
 # --- draw histogram ---
 
-def draw(ax, hist, bins, color="black", label=None, fill_alpha=0.2, lw=None, **kwargs):
-    ax.stairs(hist, bins, fill=False, alpha=1, color=color, lw=lw, label=label, **kwargs)
-    ax.stairs(hist, bins, fill=True, alpha=fill_alpha, color=color, lw=0, **kwargs)
+def draw(ax, hist, bins, unc=None, color="black", label=None, fill_alpha=0.2, lw=None, **kwargs):
+    if unc is None:
+        ax.stairs(hist, bins, fill=False, alpha=1, color=color, lw=lw, label=label, **kwargs)
+        ax.stairs(hist, bins, fill=True, alpha=fill_alpha, color=color, lw=0, **kwargs)
+    else:
+        stairs_line = ax.stairs(hist, bins, fill=False, alpha=1, color=color, lw=lw, label=label, **kwargs)
+        ax.stairs(hist, bins, fill=True, alpha=fill_alpha, color=color, lw=0, **kwargs)
+        err_container = ax.errorbar((bins[:-1]+bins[1:])/2, hist, yerr=unc, color=color, marker="", ls="", lw=lw, capsize=3, **kwargs)
+        return stairs_line, err_container
     
 def plot(ax, x, y, xerr=None, yerr=None, color="black", label=None, line_alpha=0.5, lw=1, **kwargs):
     # ax.plot(x, y, color=color, ls="", marker=".", label=label, **kwargs)
